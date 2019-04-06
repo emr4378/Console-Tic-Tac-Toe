@@ -169,12 +169,11 @@
   <ItemGroup>
     <ClCompile Include="GameBoard.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="MoveHistory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h" />
     <ClInclude Include="GameBoard.h" />
-    <ClInclude Include="MoveHistory.h" />
+    <ClInclude Include="UndoManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

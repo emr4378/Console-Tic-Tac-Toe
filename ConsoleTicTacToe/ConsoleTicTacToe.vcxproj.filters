@@ -21,9 +21,6 @@
     <ClCompile Include="GameBoard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MoveHistory.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameBoard.h">
@@ -32,7 +29,7 @@
     <ClInclude Include="Common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MoveHistory.h">
+    <ClInclude Include="UndoManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
