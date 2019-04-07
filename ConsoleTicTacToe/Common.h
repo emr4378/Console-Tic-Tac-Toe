@@ -12,4 +12,10 @@ namespace tictactoe
 		uint32_t x;
 		uint32_t y;
 	};
+
+	struct PlayerMove
+	{
+		PlayerID playerID;
+		BoardPosition position;
+	};
 }

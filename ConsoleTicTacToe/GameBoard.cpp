@@ -14,38 +14,54 @@ static constexpr bool sInRangeGrid(const BoardPosition& position, uint32_t colum
 	return (sInRangeArray(position.x, 0, columns) && sInRangeArray(position.y, 0, rows));
 }
 
-GameBoard::GameBoard(uint32_t columns, uint32_t rows, uint32_t winCondition) :
-	_columns(columns),
-	_rows(rows),
-	_winCondition(winCondition),
+GameBoard::GameBoard() :
+	_isInitialized(false),
+	_columns(0),
+	_rows(0),
+	_winCondition(0),
 	_grid(nullptr)
 {
-	_grid = new PlayerID*[_rows];
-	for (uint32_t row = 0; row < _rows; row++)
+}
+
+void GameBoard::Initialize(uint32_t columns, uint32_t rows, uint32_t winCondition)
+{
+	if (!_isInitialized)
 	{
-		_grid[row] = new PlayerID[_columns];
-		for (uint32_t column = 0; column < _columns; column++)
+		_grid = new PlayerID*[_rows];
+		for (uint32_t row = 0; row < _rows; row++)
 		{
-			_grid[row][column] = kInvalidPlayerID;
+			_grid[row] = new PlayerID[_columns];
+			for (uint32_t column = 0; column < _columns; column++)
+			{
+				_grid[row][column] = kInvalidPlayerID;
+			}
 		}
+
+		_isInitialized = true;
 	}
 }
 
-GameBoard::~GameBoard()
+void GameBoard::Terminate()
 {
-	if (_grid != nullptr)
+	if (_isInitialized)
 	{
-		for (uint32_t row = 0; row < _rows; row++)
+		if (_grid != nullptr)
 		{
-			delete[] _grid[row];
+			for (uint32_t row = 0; row < _rows; row++)
+			{
+				delete[] _grid[row];
+			}
+			delete[] _grid;
+			_grid = nullptr;
 		}
-		delete[] _grid;
-		_grid = nullptr;
+
+		_isInitialized = false;
 	}
 }
 
 MarkResult GameBoard::Mark(PlayerID playerID, const BoardPosition& position)
 {
+	assert(_isInitialized);
 	assert(playerID != kInvalidPlayerID);
 
 	MarkResult result;
@@ -67,6 +83,7 @@ MarkResult GameBoard::Mark(PlayerID playerID, const BoardPosition& position)
 
 UnmarkResult GameBoard::Unmark(PlayerID playerID, const BoardPosition& position)
 {
+	assert(_isInitialized);
 	assert(playerID != kInvalidPlayerID);
 
 	UnmarkResult result;
@@ -88,6 +105,7 @@ UnmarkResult GameBoard::Unmark(PlayerID playerID, const BoardPosition& position)
 
 PlayerID GameBoard::GetMarker(const BoardPosition& position) const
 {
+	assert(_isInitialized);
 	assert(sInRangeGrid(position, _columns, _rows));
 	return _grid[position.y][position.x];
 }
