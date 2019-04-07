@@ -33,6 +33,9 @@ using namespace tictactoe;
 static GameBoard sgGameBoard;
 static UndoManager<PlayerMove> sgMoveHistory;
 static ConsoleInterface sgConsoleInterface;
+static COORD sgMousePosition;
+static bool sgIsDirty = true;
+static bool sgIsShutdownRequested = false;
 
 static void sInitializeGameSystems(uint32_t m, uint32_t n, uint32_t k);
 static void sTerminateGameSystems();
@@ -43,6 +46,24 @@ static bool sTryParseUInt(const std::string& str, uint32_t* outValue);
 std::ostream& operator<<(std::ostream& os, const BoardPosition& position);
 std::ostream& operator<<(std::ostream& os, const GameBoard& gameBoard);
 
+static bool sConsoleRectIntersect(const ConsoleRect& a, const ConsoleRect& b)
+{
+	return !(b.left > a.right ||
+		b.right < a.left ||
+		b.top > a.bottom ||
+		b.bottom < a.top);
+}
+
+
+
+#define MARK_SIZE	5
+#define PAD_SIZE	1
+#define BORDER_SIZE	1
+#define CELL_SIZE	(MARK_SIZE + (2 * PAD_SIZE) + BORDER_SIZE)
+
+#define INFO_AREA_SIZE	1
+
+static ConsoleRect sgLastViewportRect;
 int main(int argc, char** argv)
 {
 	uint32_t m;
@@ -59,58 +80,136 @@ int main(int argc, char** argv)
 
 	sInitializeGameSystems(m, n, k);
 
-	//{
-	//	// TODO: Print coordinates of currently mouse-hovered gridcell at bottom-right corner
-	//	// https://docs.microsoft.com/en-us/windows/console/low-level-console-output-functions
-	//	// https://docs.microsoft.com/en-us/windows/console/console-screen-buffers
-	//	// https://stackoverflow.com/a/39241792
+	uint16_t minBufferWidth = (CELL_SIZE * m);
+	uint16_t minBufferHeight = (CELL_SIZE * n) + INFO_AREA_SIZE;
+	sgConsoleInterface.SetMinBufferSize({ minBufferWidth, minBufferHeight });
 
-	//	HANDLE stdOutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-	//	assert(stdOutHandle != INVALID_HANDLE_VALUE);
+	uint16_t maxColumns = minBufferWidth / CELL_SIZE;
+	uint16_t maxRows = minBufferHeight / CELL_SIZE;
 
-	//	//HWND x = GetConsoleWindow();
-	//	//ShowScrollBar(x, SB_BOTH, false);
-
-	//	CONSOLE_SCREEN_BUFFER_INFO currentConsoleInfo;
-	//	if (GetConsoleScreenBufferInfo(stdOutHandle, &currentConsoleInfo))
-	//	{
-	//		DWORD dummy;
-	//		COORD newSize = {
-	//			(currentConsoleInfo.srWindow.Right - currentConsoleInfo.srWindow.Left) + 1,
-	//			(currentConsoleInfo.srWindow.Bottom - currentConsoleInfo.srWindow.Top) + 1
-	//		};
-
-	//		bool resizeSuccess = SetConsoleScreenBufferSize(stdOutHandle, newSize);
-	//		assert(resizeSuccess);
-
-	//		COORD edtestPosition;
-	//		edtestPosition.X = newSize.X - 1;
-	//		edtestPosition.Y = newSize.Y - 1;
-	//		bool result = WriteConsoleOutputCharacterA(
-	//			stdOutHandle,
-	//			"WAFFLES",
-	//			7,
-	//			edtestPosition,
-	//			&dummy);
-	//		assert(result);
-
-	//		edtestPosition.X = 0;
-	//		edtestPosition.Y = newSize.Y - 1;
-	//		result = SetConsoleCursorPosition(stdOutHandle, edtestPosition);
-	//		assert(result);
-
-	//		//
-	//		//bool fillSuccess = FillConsoleOutputCharacterA(stdOutHandle, 'A', newSize.X * newSize.Y, { 0, 0 }, &dummy);
-	//		//assert(fillSuccess);
-	//	}
-	//}
-
-	while (true)
+	while (!sgIsShutdownRequested)
 	{
 		sgConsoleInterface.Update();
 
-		sgConsoleInterface.Clear();
-		sgConsoleInterface.DrawLine(0, 0, sgConsoleInterface.GetWidth(), sgConsoleInterface.GetHeight(), ConsoleColor::LightMagenta);
+		const ConsoleRect& viewportRect = sgConsoleInterface.GetCurrentBufferViewportRect();
+		const ConsoleSize viewportSize = viewportRect.GetSize();
+
+		if (viewportRect.left != sgLastViewportRect.left ||
+			viewportRect.right != sgLastViewportRect.right ||
+			viewportRect.top != sgLastViewportRect.top ||
+			viewportRect.bottom != sgLastViewportRect.bottom)
+		{
+			sgIsDirty = true;
+		}
+		sgLastViewportRect = viewportRect;
+
+		if (sgIsDirty)
+		{
+			sgConsoleInterface.Clear();
+
+			// Draw the game board
+			for (auto r = 0; r < maxRows; r++)
+			{
+				for (auto c = 0; c < maxColumns; c++)
+				{
+					ConsoleRect borderRect;
+					borderRect.left =	(c + 0) * CELL_SIZE;
+					borderRect.top =	(r + 0) * CELL_SIZE + INFO_AREA_SIZE;
+					borderRect.right =	(c + 1) * CELL_SIZE;
+					borderRect.bottom =	(r + 1) * CELL_SIZE + INFO_AREA_SIZE;
+
+					if (sConsoleRectIntersect(borderRect, viewportRect))
+					{
+						ConsoleRect markRect = borderRect;
+						markRect.left += BORDER_SIZE + PAD_SIZE;
+						markRect.top += BORDER_SIZE + PAD_SIZE;
+						markRect.right -= BORDER_SIZE + PAD_SIZE;
+						markRect.bottom -= BORDER_SIZE + PAD_SIZE;
+
+						// Draw player marker
+						//if (playerID == 0)
+						{
+							// Draw '\'
+							sgConsoleInterface.DrawLine(
+								markRect.left, markRect.top,
+								markRect.right, markRect.bottom,
+								ConsoleColor::LightRed);
+
+							// Draw '/'
+							sgConsoleInterface.DrawLine(
+								markRect.right, markRect.top,
+								markRect.left, markRect.bottom,
+								ConsoleColor::LightRed);
+						}
+
+						//if (playerID == 1)
+						{
+							// Draw 'O'
+							sgConsoleInterface.DrawCircle(
+								(markRect.right + markRect.left) / 2,
+								(markRect.top + markRect.bottom) / 2,
+								MARK_SIZE / 2,
+								ConsoleColor::LightBlue);
+						}
+
+						// Draw right-side border
+						if (c < maxColumns - 1)
+						{
+							sgConsoleInterface.DrawLine(
+								borderRect.right,
+								borderRect.top + BORDER_SIZE,
+								borderRect.right,
+								borderRect.bottom - BORDER_SIZE,
+								ConsoleColor::LightGray);
+							static_assert(BORDER_SIZE == 1, "Border size assumed to be 1 here.");
+						}
+
+						// Draw bottom-side border
+						if (r < maxRows - 1)
+						{
+							sgConsoleInterface.DrawLine(
+								borderRect.left + BORDER_SIZE,
+								borderRect.bottom,
+								borderRect.right - BORDER_SIZE,
+								borderRect.bottom,
+								ConsoleColor::LightGray);
+							static_assert(BORDER_SIZE == 1, "Border size assumed to be 1 here.");
+						}
+					}
+				}
+			}
+
+			sgIsDirty = false;
+		}
+
+		// Draw the info area
+		{
+			sgConsoleInterface.DrawRectangle(
+				viewportRect.left, viewportRect.top,
+				viewportRect.right + 1, viewportRect.top + INFO_AREA_SIZE,
+				ConsoleColor::Black,
+				ConsoleColor::Black);
+
+			auto mouseColumn = static_cast<uint16_t>(sgMousePosition.X / CELL_SIZE);
+			auto mouseRow = static_cast<uint16_t>(sgMousePosition.Y / CELL_SIZE);
+
+			char buffer[32];
+			auto strLength = sprintf_s(buffer, "Player %u's turn (%c)", 1, 'X');
+			sgConsoleInterface.DrawString(
+				buffer,
+				viewportRect.left + (viewportSize.width / 2) - (strLength / 2),
+				viewportRect.top,
+				ConsoleColor::Black,
+				ConsoleColor::White);
+
+			strLength = sprintf_s(buffer, "X: %u, Y: %u\0", mouseColumn, mouseRow);
+			sgConsoleInterface.DrawString(
+				buffer,
+				viewportRect.right - strLength,
+				viewportRect.top,
+				ConsoleColor::Black,
+				ConsoleColor::White);
+		}
 
 		Sleep(10);
 	}
@@ -227,13 +326,52 @@ int main(int argc, char** argv)
 	return EXIT_SUCCESS;
 }
 
+static void sEdtestKeyEventCallback(const KEY_EVENT_RECORD& event)
+{
+	if (event.bKeyDown)
+	{
+		if (event.wVirtualKeyCode == VK_SPACE)
+		{
+			sgIsDirty = true;
+		}
+		else if (event.wVirtualKeyCode == VK_ESCAPE)
+		{
+			sgIsShutdownRequested = true;
+		}
+	}
+}
+
+static void sEdtestMouseEventCallback(const MOUSE_EVENT_RECORD& event)
+{
+	//sgConsoleInterface.DrawLine(0, 0, event.dwMousePosition.X, event.dwMousePosition.Y, ConsoleColor::LightCyan);
+	
+	if (event.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)
+	{
+		//sgConsoleInterface.DrawPixel(event.dwMousePosition.X, event.dwMousePosition.Y, ConsoleColor::LightCyan);
+		sgConsoleInterface.DrawLine(sgMousePosition.X, sgMousePosition.Y, event.dwMousePosition.X, event.dwMousePosition.Y, ConsoleColor::LightCyan);
+	}
+	else if (event.dwButtonState & RIGHTMOST_BUTTON_PRESSED)
+	{
+		sgConsoleInterface.DrawLine(sgMousePosition.X, sgMousePosition.Y, event.dwMousePosition.X, event.dwMousePosition.Y, ConsoleColor::Black);
+	}
+	sgMousePosition = event.dwMousePosition;
+}
+
+static void sEdtestResizeEventCallback(const ConsoleSize& size)
+{
+	sgIsDirty = true;
+}
+
 static void sInitializeGameSystems(uint32_t m, uint32_t n, uint32_t k)
 {
 	sgGameBoard.Initialize(m, n, k);
 	sgMoveHistory.Initialize(
 		[](const PlayerMove& move) { sgGameBoard.Unmark(move.playerID, move.position); },
 		[](const PlayerMove& move) { sgGameBoard.Mark(move.playerID, move.position); });
-	sgConsoleInterface.Initialize();
+	sgConsoleInterface.Initialize(
+		sEdtestKeyEventCallback,
+		sEdtestMouseEventCallback,
+		sEdtestResizeEventCallback);
 
 	bool result = SetConsoleCtrlHandler(sConsoleCtrlHandler, true);
 	assert(result);

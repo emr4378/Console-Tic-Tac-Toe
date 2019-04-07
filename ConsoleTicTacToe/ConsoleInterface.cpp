@@ -9,25 +9,45 @@
 
 using namespace tictactoe;
 
-WORD sConsoleColorsToAttributes(ConsoleColor foregroundColor, ConsoleColor backgroundColor)
+static const ConsoleSize kAbsoluteMinimumBufferSize = { 1, 1 };
+
+static WORD sConsoleColorsToAttributes(const ConsoleColor& foregroundColor, const ConsoleColor& backgroundColor);
+
+static COORD sConsoleSizeToCoord(const ConsoleSize& size);
+static ConsoleSize sCoordToConsoleSize(const COORD& coord);
+
+static SMALL_RECT sConsoleRectToSmallRect(const ConsoleRect& rect);
+static ConsoleRect sSmallRectToConsoleRect(const SMALL_RECT& rect);
+
+ConsoleSize ConsoleRect::GetSize() const
 {
-	WORD foreground = static_cast<WORD>(foregroundColor);
-	WORD background = static_cast<WORD>(backgroundColor);
-	return foreground + (background * 16);
+	assert(right > left);
+	assert(bottom > top);
+	return { static_cast<uint16_t>(right - left), static_cast<uint16_t>(bottom - top) };
 }
 
 ConsoleInterface::ConsoleInterface() :
 	_isInitialized(false),
 	_stdInHandle(INVALID_HANDLE_VALUE),
 	_stdOutHandle(INVALID_HANDLE_VALUE),
-	_cachedInfo()
+	_cachedInfo(),
+	_keyEventCallback(),
+	_mouseEventCallback(),
+	_resizeEventCallback(),
+	_minBufferSize(),
+	_currentBufferSize(),
+	_currentBufferViewportRect()
 {
 }
 
-void ConsoleInterface::Initialize()
+void ConsoleInterface::Initialize(KeyEventCallback keyCb, MouseEventCallback mouseCb, ResizeEventCallback resizeCb)
 {
 	if (!_isInitialized)
 	{
+		_keyEventCallback = keyCb;
+		_mouseEventCallback = mouseCb;
+		_resizeEventCallback = resizeCb;
+
 		_stdInHandle = GetStdHandle(STD_INPUT_HANDLE);
 		assert(_stdInHandle != INVALID_HANDLE_VALUE);
 
@@ -65,6 +85,10 @@ void ConsoleInterface::Initialize()
 		result = SetConsoleMode(_stdInHandle, ENABLE_EXTENDED_FLAGS | ENABLE_PROCESSED_INPUT | ENABLE_MOUSE_INPUT);
 		assert(result);
 
+		_minBufferSize = kAbsoluteMinimumBufferSize;
+		_currentBufferSize = sCoordToConsoleSize(_cachedInfo.stdOutScreenBufferInfo.dwSize);
+		_currentBufferViewportRect = sSmallRectToConsoleRect(_cachedInfo.stdOutScreenBufferInfo.srWindow);
+
 		_isInitialized = true;
 	}
 }
@@ -73,6 +97,10 @@ void ConsoleInterface::Terminate()
 {
 	if (_isInitialized)
 	{
+		_keyEventCallback = NULL;
+		_mouseEventCallback = NULL;
+		_resizeEventCallback = NULL;
+
 		Clear();
 
 		// Restore the initial console state that was cached in Initialize().
@@ -90,6 +118,9 @@ void ConsoleInterface::Terminate()
 			assert(result);
 		}
 
+		_minBufferSize = {};
+		_currentBufferSize = {};
+		_currentBufferViewportRect = {};
 		_cachedInfo = {};
 		_stdOutHandle = INVALID_HANDLE_VALUE;
 		_stdInHandle = INVALID_HANDLE_VALUE;
@@ -101,78 +132,95 @@ void ConsoleInterface::Update()
 {
 	assert(_isInitialized);
 
-	CONSOLE_SCREEN_BUFFER_INFO sbInfo;
-	if (GetConsoleScreenBufferInfo(_stdOutHandle, &sbInfo))
+	bool receivedResizeEvent = false;
+	DWORD inputEventCount;
+	if (GetNumberOfConsoleInputEvents(_stdInHandle, &inputEventCount) &&
+		inputEventCount > 0)
 	{
-		int16_t newWidth = max(sbInfo.srWindow.Right - sbInfo.srWindow.Left, 0) + 1;
-		int16_t newHeight = max(sbInfo.srWindow.Bottom - sbInfo.srWindow.Top, 0) + 1;
-		if (newWidth != _currentWidth ||
-			newHeight != _currentHeight)
+		const uint32_t eventBufferSize = 32;
+		INPUT_RECORD eventBuffer[eventBufferSize];
+
+		DWORD eventsReadCount;
+		if (ReadConsoleInput(_stdInHandle, eventBuffer, eventBufferSize, &eventsReadCount))
 		{
-			_currentWidth = newWidth;
-			_currentHeight = newHeight;
-			SetConsoleScreenBufferSize(_stdOutHandle, { _currentWidth, _currentHeight });
+			for (uint32_t eventIndex = 0; eventIndex < eventsReadCount; eventIndex++)
+			{
+				const INPUT_RECORD& eventRecord = eventBuffer[eventIndex];
+				switch (eventRecord.EventType)
+				{
+				case KEY_EVENT:
+					_keyEventCallback(eventRecord.Event.KeyEvent);
+					break;
+				case MOUSE_EVENT:
+					_mouseEventCallback(eventRecord.Event.MouseEvent);
+					break;
+				case WINDOW_BUFFER_SIZE_EVENT:
+					receivedResizeEvent = true;
+					break;
+				default:
+					// Do nothing.
+					break;
+				}
+			}
 		}
 	}
 
-	// TODO: Pass in callback functions for onMouseEvent, onKeyboardEvent, onResizeEvent, and invoke them here
-	//bool hasInputEvents = false;
-	//{
-	//	DWORD inputEventCount;
-	//	if (GetNumberOfConsoleInputEvents(_stdInHandle, &inputEventCount))
-	//	{
-	//		hasInputEvents = (inputEventCount > 0);
-	//	}
-	//}
+	CONSOLE_SCREEN_BUFFER_INFO sbInfo;
+	if (GetConsoleScreenBufferInfo(_stdOutHandle, &sbInfo))
+	{
+		_currentBufferViewportRect = sSmallRectToConsoleRect(sbInfo.srWindow);
 
-	//const uint32_t eventBufferSize = 32;
-	//INPUT_RECORD eventBuffer[eventBufferSize];
-
-	//DWORD eventsReadCount;
-	//if (ReadConsoleInput(_stdInHandle, eventBuffer, eventBufferSize, &eventsReadCount))
-	//{
-	//	for (uint32_t eventIndex = 0; eventIndex < eventsReadCount; eventIndex++)
-	//	{
-	//		const INPUT_RECORD& eventRecord = eventBuffer[eventIndex];
-	//		switch (eventRecord.EventType)
-	//		{
-	//		case KEY_EVENT:
-	//			printf("Key Event\n");
-	//			break;
-	//		case MOUSE_EVENT:
-	//			printf("Mouse Event\n");
-	//			break;
-	//		case WINDOW_BUFFER_SIZE_EVENT:
-	//			printf("Window Buffer Size Event\n");
-	//			break;
-	//		case MENU_EVENT:
-	//			printf("Menu Event\n");
-	//			break;
-	//		case FOCUS_EVENT:
-	//			printf("Focus Event\n");
-	//			break;
-	//		default:
-	//			printf("Unknown Event\n");
-	//			break;
-	//		}
-	//	}
-	//}
+		if (receivedResizeEvent)
+		{
+			uint16_t w = max(sbInfo.srWindow.Right - sbInfo.srWindow.Left, 0) + 1;
+			uint16_t h = max(sbInfo.srWindow.Bottom - sbInfo.srWindow.Top, 0) + 1;
+			if (w != _currentBufferSize.width ||
+				h != _currentBufferSize.height)
+			{
+				ResizeBuffer(w, h);
+				_resizeEventCallback(_currentBufferSize);
+			}
+		}
+	}
 }
 
-void ConsoleInterface::DrawChar(char c, int16_t x, int16_t y, const ConsoleColor& color, const ConsoleColor& backgroundColor)
+void ConsoleInterface::SetMinBufferSize(const ConsoleSize& size)
 {
-	COORD coord = { x, y };
+	_minBufferSize.width = max(size.width, kAbsoluteMinimumBufferSize.width);
+	_minBufferSize.height = max(size.height, kAbsoluteMinimumBufferSize.height);
+
+	uint16_t w = max(_currentBufferSize.width, _minBufferSize.width);
+	uint16_t h = max(_currentBufferSize.height, _minBufferSize.height);
+	if (w != _currentBufferSize.width ||
+		h != _currentBufferSize.height)
+	{
+		ResizeBuffer(w, h);
+	}
+}
+
+void ConsoleInterface::ResizeBuffer(uint16_t w, uint16_t h)
+{
+	w = max(w, _minBufferSize.width);
+	h = max(h, _minBufferSize.height);
+
+	_currentBufferSize = { w, h };
+	SetConsoleScreenBufferSize(_stdOutHandle, sConsoleSizeToCoord(_currentBufferSize));
+}
+
+void ConsoleInterface::DrawChar(char c, uint16_t x, uint16_t y, const ConsoleColor& color, const ConsoleColor& backgroundColor)
+{
+	COORD coord = { static_cast<SHORT>(x), static_cast<SHORT>(y) };
 	WORD attributes = sConsoleColorsToAttributes(color, backgroundColor);
 	DWORD dummy;
 	WriteConsoleOutputAttribute(_stdOutHandle, &attributes, 1, coord, &dummy);
 	WriteConsoleOutputCharacterA(_stdOutHandle, &c, 1, coord, &dummy);
 }
 
-void ConsoleInterface::DrawString(const char* str, int16_t x, int16_t y, const ConsoleColor& color, const ConsoleColor& backgroundColor)
+void ConsoleInterface::DrawString(const char* str, uint16_t x, uint16_t y, const ConsoleColor& color, const ConsoleColor& backgroundColor)
 {
 	while (*str != NULL &&
-		(x >= 0 && x < _currentWidth) &&
-		(y >= 0 && y < _currentHeight))
+		(x >= 0 && x < _currentBufferSize.width) &&
+		(y >= 0 && y < _currentBufferSize.height))
 	{
 		DrawChar(*str, x, y, color, backgroundColor);
 		x++;
@@ -180,17 +228,17 @@ void ConsoleInterface::DrawString(const char* str, int16_t x, int16_t y, const C
 	}
 }
 
-void ConsoleInterface::DrawPixel(int16_t x, int16_t y, const ConsoleColor& color)
+void ConsoleInterface::DrawPixel(uint16_t x, uint16_t y, const ConsoleColor& color)
 {
 	DrawChar(' ', x, y, color, color);
 }
 
-// Source: https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
-void ConsoleInterface::DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, const ConsoleColor& color)
+// Reference: https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
+void ConsoleInterface::DrawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, const ConsoleColor& color)
 {
 	bool isVertical = abs(y1 - y0) > abs(x1 - x0);
 
-	// The base algorithm assumes horizontal lines; swap the x/y values if it's more vertical.
+	// The base algorithm assumes horizontal-ish lines; swap the x/y values if it's more vertical-ish.
 	if (isVertical)
 	{
 		std::swap(x0, y0);
@@ -202,6 +250,12 @@ void ConsoleInterface::DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, 
 	{
 		std::swap(x0, x1);
 		std::swap(y0, y1);
+	}
+
+	int16_t yInc = 1;
+	if (y0 > y1)
+	{
+		yInc = -1;
 	}
 
 	int16_t deltaX = abs(x1 - x0);
@@ -218,7 +272,7 @@ void ConsoleInterface::DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, 
 
 		if (decision > 0)
 		{
-			y++;
+			y += yInc;
 			decision -= 2 * deltaX;
 		}
 		decision += 2 * deltaY;
@@ -227,8 +281,8 @@ void ConsoleInterface::DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, 
 	}
 }
 
-// Source: https://www.thecrazyprogrammer.com/2016/12/bresenhams-midpoint-circle-algorithm-c-c.html
-void ConsoleInterface::DrawCircle(int16_t x, int16_t y, int16_t r, const ConsoleColor& color)
+// Reference: https://www.thecrazyprogrammer.com/2016/12/bresenhams-midpoint-circle-algorithm-c-c.html
+void ConsoleInterface::DrawCircle(uint16_t x, uint16_t y, uint16_t r, const ConsoleColor& color)
 {
 	assert(r > 0);
 
@@ -263,7 +317,7 @@ void ConsoleInterface::DrawCircle(int16_t x, int16_t y, int16_t r, const Console
 	}
 }
 
-void ConsoleInterface::DrawRectangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, const ConsoleColor& color, const ConsoleColor& fillColor)
+void ConsoleInterface::DrawRectangle(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, const ConsoleColor& color, const ConsoleColor& fillColor)
 {
 	assert(x0 < x1);
 	assert(y0 < y1);
@@ -283,8 +337,51 @@ void ConsoleInterface::Clear()
 	assert(_isInitialized);
 
 	COORD topLeft = { 0, 0 };
-	DWORD bufferSize = _currentWidth * _currentHeight;
+	DWORD bufferSize = _currentBufferSize.width * _currentBufferSize.height;
 	DWORD dummy;
 	FillConsoleOutputCharacterA(_stdOutHandle, ' ', bufferSize, topLeft, &dummy);
 	FillConsoleOutputAttribute(_stdOutHandle, 0, bufferSize, topLeft, &dummy);
+}
+
+static WORD sConsoleColorsToAttributes(const ConsoleColor& foregroundColor, const ConsoleColor& backgroundColor)
+{
+	WORD foreground = static_cast<WORD>(foregroundColor);
+	WORD background = static_cast<WORD>(backgroundColor);
+	return foreground + (background * 16);
+}
+
+static COORD sConsoleSizeToCoord(const ConsoleSize& size)
+{
+	return {
+		static_cast<SHORT>(size.width),
+		static_cast<SHORT>(size.height)
+	};
+}
+
+static ConsoleSize sCoordToConsoleSize(const COORD& coord)
+{
+	return {
+		static_cast<uint16_t>(coord.X),
+		static_cast<uint16_t>(coord.Y)
+	};
+}
+
+static SMALL_RECT sConsoleRectToSmallRect(const ConsoleRect& rect)
+{
+	return {
+		static_cast<SHORT>(rect.left),
+		static_cast<SHORT>(rect.top),
+		static_cast<SHORT>(rect.right),
+		static_cast<SHORT>(rect.bottom)
+	};
+}
+
+static ConsoleRect sSmallRectToConsoleRect(const SMALL_RECT& rect)
+{
+	return {
+		static_cast<uint16_t>(rect.Left),
+		static_cast<uint16_t>(rect.Top),
+		static_cast<uint16_t>(rect.Right),
+		static_cast<uint16_t>(rect.Bottom)
+	};
 }

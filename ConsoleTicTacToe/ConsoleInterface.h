@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <Windows.h>
 
 namespace tictactoe
@@ -28,25 +29,51 @@ namespace tictactoe
 		White =			LightGray | DarkGray
 	};
 
+	struct ConsoleSize
+	{
+		uint16_t width;
+		uint16_t height;
+	};
+
+	struct ConsoleRect
+	{
+		uint16_t left;
+		uint16_t top;
+		uint16_t right;
+		uint16_t bottom;
+
+		ConsoleSize GetSize() const;
+	};
+
+	// Reference: https://docs.microsoft.com/en-us/windows/console/
 	class ConsoleInterface
 	{
 	public:
+		typedef std::function<void(const KEY_EVENT_RECORD&)> KeyEventCallback;
+		typedef std::function<void(const MOUSE_EVENT_RECORD&)> MouseEventCallback;
+		typedef std::function<void(const ConsoleSize&)> ResizeEventCallback;
+
 		ConsoleInterface();
 
-		void Initialize();
+		void Initialize(KeyEventCallback keyCb, MouseEventCallback mouseCb, ResizeEventCallback resizeCb);
 		void Terminate();
 		void Update();
 
-		void DrawChar(char c, int16_t x, int16_t y, const ConsoleColor& color, const ConsoleColor& backgroundColor);
-		void DrawString(const char* str, int16_t x, int16_t y, const ConsoleColor& color, const ConsoleColor& backgroundColor);
-		void DrawPixel(int16_t x, int16_t y, const ConsoleColor& color);
-		void DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, const ConsoleColor& color);
-		void DrawCircle(int16_t x, int16_t y, int16_t r, const ConsoleColor& color);
-		void DrawRectangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, const ConsoleColor& color, const ConsoleColor& fillColor);
+		void SetMinBufferSize(const ConsoleSize& size);
+		const ConsoleSize& GetMinBufferSize() const { return _minBufferSize; }
+		const ConsoleSize& GetCurrentBufferSize() const { return _currentBufferSize; }
+		const ConsoleRect& GetCurrentBufferViewportRect() const { return _currentBufferViewportRect; }
+
+		void DrawChar(char c, uint16_t x, uint16_t y, const ConsoleColor& color, const ConsoleColor& backgroundColor);
+		void DrawString(const char* str, uint16_t x, uint16_t y, const ConsoleColor& color, const ConsoleColor& backgroundColor);
+		void DrawPixel(uint16_t x, uint16_t y, const ConsoleColor& color);
+		void DrawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, const ConsoleColor& color);
+		void DrawCircle(uint16_t x, uint16_t y, uint16_t r, const ConsoleColor& color);
+		void DrawRectangle(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, const ConsoleColor& color, const ConsoleColor& fillColor);
 		void Clear();
 
-		int16_t GetWidth() const { return _currentWidth; }
-		int16_t GetHeight() const { return _currentHeight; }
+	private:
+		void ResizeBuffer(uint16_t w, uint16_t h);
 
 	private:
 		struct CachedInfo
@@ -62,8 +89,13 @@ namespace tictactoe
 		HANDLE _stdInHandle;
 		HANDLE _stdOutHandle;
 		CachedInfo _cachedInfo;
+		
+		KeyEventCallback _keyEventCallback;
+		MouseEventCallback _mouseEventCallback;
+		ResizeEventCallback _resizeEventCallback;
 
-		int16_t _currentWidth;
-		int16_t _currentHeight;
+		ConsoleSize _minBufferSize;
+		ConsoleSize _currentBufferSize;
+		ConsoleRect _currentBufferViewportRect;
 	};
 }
