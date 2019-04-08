@@ -173,13 +173,13 @@ bool FancyGame::Update()
 			{
 				bufferCharCount = sprintf_s(
 					buffer,
-					"X: %u, Y: %u\0",
+					"(%u, %u)",
 					_currentMouseCell.x,
 					_currentMouseCell.y);
 			}
 			else
 			{
-				bufferCharCount = sprintf_s(buffer, "X: --, Y: --");
+				bufferCharCount = sprintf_s(buffer, "(-, -)");
 			}
 
 			_consoleInterface.DrawString(
