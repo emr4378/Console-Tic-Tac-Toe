@@ -77,7 +77,8 @@ bool BasicGame::Update()
 		{
 			isTurnOver = ExecuteResetCommand();
 		}
-		else if (inputCommand.compare(0, commandNameEnd, "quit") == 0)
+		else if (inputCommand.compare(0, commandNameEnd, "quit") == 0 ||
+				inputCommand.compare(0, commandNameEnd, "exit") == 0)
 		{
 			isTurnOver = ExecuteQuitCommand();
 		}
@@ -200,6 +201,7 @@ bool BasicGame::ExecuteHelpCommand()
 	printCmd("help",			"Prints this help message.");
 	printCmd("status",			"Prints the current state of the game.");
 	printCmd("reset",			"Clears the current game board and restarts the game.");
+	printCmd("exit",			"Ends the game and exits this console application.");
 	printCmd("quit",			"Ends the game and exits this console application.");
 
 	return true;
