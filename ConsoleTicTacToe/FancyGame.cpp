@@ -21,7 +21,7 @@ static const char* sGetPlayerName(PlayerID playerID);
 static char sGetPlayerChar(PlayerID playerID);
 static ConsoleColor sGetPlayerColor(PlayerID playerID);
 
-FancyGame::FancyGame(uint32_t m, uint32_t n, uint32_t k) :
+FancyGame::FancyGame(uint16_t m, uint16_t n, uint16_t k) :
 	GameSimulation(m, n, k),
 	_consoleInterface(),
 	_isGameAreaDirty(true),
@@ -151,7 +151,7 @@ bool FancyGame::Update()
 		}
 
 		char buffer[32];
-		int32_t bufferCharCount;
+		int16_t bufferCharCount;
 
 		// Print the general game information
 		{
@@ -400,8 +400,8 @@ void FancyGame::DrawPlayerMarkerWinBackground(const ConsoleRect& markerRect)
 static BoardPosition sGetBoardPosition(uint16_t x, uint16_t y)
 {
 	return {
-		static_cast<uint32_t>(x / CELL_SIZE),
-		static_cast<uint32_t>((y - INFO_AREA_SIZE) / CELL_SIZE)
+		static_cast<uint16_t>(x / CELL_SIZE),
+		static_cast<uint16_t>((y - INFO_AREA_SIZE) / CELL_SIZE)
 	};
 }
 

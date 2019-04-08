@@ -24,8 +24,8 @@ namespace tictactoe
 		bool Redo();
 		void Clear();
 
-		uint32_t GetAvailableUndosCount() const;
-		uint32_t GetAvailableRedosCount() const;
+		uint16_t GetAvailableUndosCount() const;
+		uint16_t GetAvailableRedosCount() const;
 
 	private:
 		ApplyFunc _applyUndoFunc;
@@ -94,15 +94,15 @@ namespace tictactoe
 	}
 
 	template <typename T>
-	uint32_t UndoManager<T>::GetAvailableUndosCount() const
+	uint16_t UndoManager<T>::GetAvailableUndosCount() const
 	{
-		return static_cast<uint32_t>(std::distance(_moveList.cbegin(), _undoPosition));
+		return static_cast<uint16_t>(std::distance(_moveList.cbegin(), _undoPosition));
 	}
 
 	template <typename T>
-	uint32_t UndoManager<T>::GetAvailableRedosCount() const
+	uint16_t UndoManager<T>::GetAvailableRedosCount() const
 	{
-		return static_cast<uint32_t>(std::distance(_undoPosition, _moveList.cend()));
+		return static_cast<uint16_t>(std::distance(_undoPosition, _moveList.cend()));
 	}
 
 	#pragma endregion

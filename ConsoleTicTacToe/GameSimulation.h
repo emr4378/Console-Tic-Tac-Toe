@@ -22,7 +22,7 @@ namespace tictactoe
 		static const uint16_t kNumPlayers = 2;
 
 	public:
-		GameSimulation(uint32_t m, uint32_t n, uint32_t k);
+		GameSimulation(uint16_t m, uint16_t n, uint16_t k);
 		virtual ~GameSimulation();
 
 		virtual bool Update() = 0;

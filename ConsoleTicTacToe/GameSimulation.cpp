@@ -5,7 +5,7 @@ using namespace tictactoe;
 static PlayerID sGetNextPlayerID(PlayerID id);
 static PlayerID sGetPrevPlayerID(PlayerID id);
 
-GameSimulation::GameSimulation(uint32_t m, uint32_t n, uint32_t k) :
+GameSimulation::GameSimulation(uint16_t m, uint16_t n, uint16_t k) :
 	_gameBoard(m, n, k),
 	_moveHistory(),
 	_activePlayer(0),

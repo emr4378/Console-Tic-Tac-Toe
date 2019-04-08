@@ -4,17 +4,17 @@
 
 using namespace tictactoe;
 
-static constexpr bool sInRangeArray(uint32_t val, uint32_t min, uint32_t max)
+static constexpr bool sInRangeArray(uint16_t val, uint16_t min, uint16_t max)
 {
 	return (min <= val && val < max);
 }
 
-static constexpr bool sInRangeGrid(const BoardPosition& position, uint32_t columns, uint32_t rows)
+static constexpr bool sInRangeGrid(const BoardPosition& position, uint16_t columns, uint16_t rows)
 {
 	return (sInRangeArray(position.x, 0, columns) && sInRangeArray(position.y, 0, rows));
 }
 
-GameBoard::GameBoard(uint32_t columns, uint32_t rows, uint32_t winCondition) :
+GameBoard::GameBoard(uint16_t columns, uint16_t rows, uint16_t winCondition) :
 	_columns(columns),
 	_rows(rows),
 	_winCondition(winCondition),
@@ -26,10 +26,10 @@ GameBoard::GameBoard(uint32_t columns, uint32_t rows, uint32_t winCondition) :
 	assert(_winCondition > 1);
 
 	_grid = new PlayerID*[_rows];
-	for (uint32_t row = 0; row < _rows; row++)
+	for (uint16_t row = 0; row < _rows; row++)
 	{
 		_grid[row] = new PlayerID[_columns];
-		for (uint32_t column = 0; column < _columns; column++)
+		for (uint16_t column = 0; column < _columns; column++)
 		{
 			_grid[row][column] = kInvalidPlayerID;
 		}
@@ -40,7 +40,7 @@ GameBoard::~GameBoard()
 {
 	if (_grid != nullptr)
 	{
-		for (uint32_t row = 0; row < _rows; row++)
+		for (uint16_t row = 0; row < _rows; row++)
 		{
 			delete[] _grid[row];
 		}
@@ -101,9 +101,9 @@ UnmarkResult GameBoard::Unmark(PlayerID playerID, const BoardPosition& position)
 
 void GameBoard::Clear()
 {
-	for (uint32_t row = 0; row < _rows; row++)
+	for (uint16_t row = 0; row < _rows; row++)
 	{
-		for (uint32_t column = 0; column < _columns; column++)
+		for (uint16_t column = 0; column < _columns; column++)
 		{
 			_grid[row][column] = kInvalidPlayerID;
 		}
@@ -152,7 +152,9 @@ void GameBoard::CheckForWin(PlayerID playerID, const BoardPosition& position)
 		{
 			for (int16_t i = -a; i <= b; i++)
 			{
-				BoardPosition temp = { position.x - (i * offset.x), position.y - (i * offset.y) };
+				BoardPosition temp = {
+					static_cast<uint16_t>(position.x - (i * offset.x)),
+					static_cast<uint16_t>(position.y - (i * offset.y)) };
 				_winningPositions.push_back(temp);
 			}
 		}

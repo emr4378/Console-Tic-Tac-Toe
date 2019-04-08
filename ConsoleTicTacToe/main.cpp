@@ -5,12 +5,12 @@
 #include <string>
 
 static tictactoe::GameSimulation* sgGame = nullptr;
-static void sCreateGameSimulation(uint32_t m, uint32_t n, uint32_t k, bool isFancy);
+static void sCreateGameSimulation(uint16_t m, uint16_t n, uint16_t k, bool isFancy);
 static void sDestroyGameSimulation();
 
 static BOOL WINAPI sConsoleCtrlHandler(DWORD dwCtrlType);
 
-static bool sTryParseUInt(const std::string& str, uint32_t* outValue);
+static bool sTryParseUInt(const std::string& str, uint16_t* outValue);
 static void sPrintUsage();
 
 int main(int argc, char** argv)
@@ -22,9 +22,9 @@ int main(int argc, char** argv)
 	}
 
 	// Parse the first 3 parameters (m, n, k).
-	uint32_t m;
-	uint32_t n;
-	uint32_t k;
+	uint16_t m;
+	uint16_t n;
+	uint16_t k;
 	if (!sTryParseUInt(argv[1], &m) ||
 		!sTryParseUInt(argv[2], &n) ||
 		!sTryParseUInt(argv[3], &k))
@@ -62,7 +62,7 @@ int main(int argc, char** argv)
 	return EXIT_SUCCESS;
 }
 
-static void sCreateGameSimulation(uint32_t m, uint32_t n, uint32_t k, bool isFancy)
+static void sCreateGameSimulation(uint16_t m, uint16_t n, uint16_t k, bool isFancy)
 {
 	if (sgGame == nullptr)
 	{
@@ -91,7 +91,7 @@ static BOOL WINAPI sConsoleCtrlHandler(DWORD dwCtrlType)
 	return false;
 }
 
-static bool sTryParseUInt(const std::string& str, uint32_t* outValue)
+static bool sTryParseUInt(const std::string& str, uint16_t* outValue)
 {
 	bool result = false;
 	*outValue = 0;
@@ -100,9 +100,9 @@ static bool sTryParseUInt(const std::string& str, uint32_t* outValue)
 	{
 		size_t pos;
 		auto value = std::stoul(str, &pos);
-		if (value < LONG_MAX && pos == str.length())
+		if (value < UINT16_MAX && pos == str.length())
 		{
-			*outValue = value;
+			*outValue = static_cast<uint16_t>(value);
 			result = true;
 		}
 	}

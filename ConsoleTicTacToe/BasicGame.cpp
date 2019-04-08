@@ -10,12 +10,12 @@ using namespace tictactoe;
 static const char* sGetPlayerName(PlayerID playerID);
 static char sGetPlayerChar(PlayerID playerID);
 
-static bool sTryParseUInt(const std::string& str, uint32_t* outValue);
+static bool sTryParseUInt(const std::string& str, uint16_t* outValue);
 
 std::ostream& operator<<(std::ostream& os, const BoardPosition& position);
 std::ostream& operator<<(std::ostream& os, const GameBoard& gameBoard);
 
-BasicGame::BasicGame(uint32_t m, uint32_t n, uint32_t k) :
+BasicGame::BasicGame(uint16_t m, uint16_t n, uint16_t k) :
 	GameSimulation(m, n, k),
 	_isQuitRequested(false)
 {
@@ -153,7 +153,7 @@ bool BasicGame::ExecuteMarkCommand(std::string params)
 				std::cerr << "Cannot mark position; game has ended." << std::endl;
 				break;
 		}
-		static_assert(static_cast<int32_t>(MarkResult::Count) == 4, "BasicGame::ExecuteMarkCommand() needs updating.");
+		static_assert(static_cast<int16_t>(MarkResult::Count) == 4, "BasicGame::ExecuteMarkCommand() needs updating.");
 	}
 	else
 	{
@@ -275,7 +275,7 @@ static char sGetPlayerChar(PlayerID playerID)
 	static_assert(GameSimulation::kNumPlayers == 2, "sGetPlayerChar() needs updating.");
 }
 
-static bool sTryParseUInt(const std::string& str, uint32_t* outValue)
+static bool sTryParseUInt(const std::string& str, uint16_t* outValue)
 {
 	bool result = false;
 	*outValue = 0;
@@ -284,9 +284,9 @@ static bool sTryParseUInt(const std::string& str, uint32_t* outValue)
 	{
 		size_t pos;
 		auto value = std::stoul(str, &pos);
-		if (value < LONG_MAX && pos == str.length())
+		if (value < UINT16_MAX && pos == str.length())
 		{
-			*outValue = value;
+			*outValue = static_cast<uint16_t>(value);
 			result = true;
 		}
 	}
@@ -311,9 +311,9 @@ std::ostream& operator<<(std::ostream& os, const GameBoard& gameBoard)
 	os << gameBoard.GetWinCondition() << "-in-a-row";
 	os << std::endl;
 
-	for (uint32_t row = 0; row < gameBoard.GetRows(); row++)
+	for (uint16_t row = 0; row < gameBoard.GetRows(); row++)
 	{
-		for (uint32_t column = 0; column < gameBoard.GetColumns(); column++)
+		for (uint16_t column = 0; column < gameBoard.GetColumns(); column++)
 		{
 			os << sGetPlayerChar(gameBoard.GetMarker({ column, row }));
 

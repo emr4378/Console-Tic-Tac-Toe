@@ -28,8 +28,8 @@ namespace tictactoe
 
 	struct BoardPosition
 	{
-		uint32_t x;
-		uint32_t y;
+		uint16_t x;
+		uint16_t y;
 	};
 
 	struct PlayerMove
@@ -48,7 +48,7 @@ namespace tictactoe
 	public:
 		typedef std::vector<BoardPosition> WinPositionList;
 
-		GameBoard(uint32_t columns, uint32_t rows, uint32_t winCondition);
+		GameBoard(uint16_t columns, uint16_t rows, uint16_t winCondition);
 		virtual ~GameBoard();
 
 		MarkResult Mark(PlayerID playerID, const BoardPosition& position);
@@ -58,9 +58,9 @@ namespace tictactoe
 		bool IsValidPosition(const BoardPosition& position) const;
 		PlayerID GetMarker(const BoardPosition& position) const;
 
-		uint32_t GetRows() const { return _rows; }
-		uint32_t GetColumns() const { return _columns; }
-		uint32_t GetWinCondition() const { return _winCondition; }
+		uint16_t GetRows() const { return _rows; }
+		uint16_t GetColumns() const { return _columns; }
+		uint16_t GetWinCondition() const { return _winCondition; }
 
 		bool IsFilled() const { return _markerCount >= _columns * _rows; }
 		PlayerID GetWinningPlayer() const { return _winningPlayerID; }
@@ -75,12 +75,12 @@ namespace tictactoe
 			int16_t xOffset, int16_t yOffset,
 			uint16_t remainingSteps) const;
 
-		uint32_t _columns;		// m
-		uint32_t _rows;			// n
-		uint32_t _winCondition;	// k
+		uint16_t _columns;		// m
+		uint16_t _rows;			// n
+		uint16_t _winCondition;	// k
 
 		PlayerID** _grid;
-		uint32_t _markerCount;
+		uint16_t _markerCount;
 
 		PlayerID _winningPlayerID;
 		WinPositionList _winningPositions;

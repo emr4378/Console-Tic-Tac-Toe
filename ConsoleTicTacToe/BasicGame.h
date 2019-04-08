@@ -7,7 +7,7 @@ namespace tictactoe
 	class BasicGame : public GameSimulation
 	{
 	public:
-		BasicGame(uint32_t m, uint32_t n, uint32_t k);
+		BasicGame(uint16_t m, uint16_t n, uint16_t k);
 		virtual ~BasicGame();
 
 		virtual bool Update() override;

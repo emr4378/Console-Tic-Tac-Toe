@@ -126,13 +126,13 @@ void ConsoleInterface::Update()
 	if (GetNumberOfConsoleInputEvents(_stdInHandle, &inputEventCount) &&
 		inputEventCount > 0)
 	{
-		const uint32_t eventBufferSize = 32;
+		const uint16_t eventBufferSize = 32;
 		INPUT_RECORD eventBuffer[eventBufferSize];
 
 		DWORD eventsReadCount;
 		if (ReadConsoleInput(_stdInHandle, eventBuffer, eventBufferSize, &eventsReadCount))
 		{
-			for (uint32_t eventIndex = 0; eventIndex < eventsReadCount; eventIndex++)
+			for (uint16_t eventIndex = 0; eventIndex < eventsReadCount; eventIndex++)
 			{
 				const INPUT_RECORD& eventRecord = eventBuffer[eventIndex];
 				switch (eventRecord.EventType)
