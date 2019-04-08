@@ -22,6 +22,7 @@ namespace tictactoe
 		void Add(const T& move);
 		void Undo();
 		void Redo();
+		void Clear();
 
 		uint32_t GetAvailableUndosCount() const;
 		uint32_t GetAvailableRedosCount() const;
@@ -77,6 +78,13 @@ namespace tictactoe
 			_applyRedoFunc(*_undoPosition);
 			_undoPosition++;
 		}
+	}
+
+	template <typename T>
+	void UndoManager<T>::Clear()
+	{
+		_moveList.clear();
+		_undoPosition = _moveList.end();
 	}
 
 	template <typename T>

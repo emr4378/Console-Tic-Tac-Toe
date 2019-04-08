@@ -200,6 +200,15 @@ void FancyGame::Update()
 	_prevViewportRect = viewportRect;
 }
 
+void FancyGame::Reset()
+{
+	GameSimulation::Reset();
+
+	_consoleInterface.Clear();
+	_isGameAreaDirty = true;
+	_isInfoPanelDirty = true;
+}
+
 void FancyGame::OnKeyEvent(const KEY_EVENT_RECORD& event)
 {
 	if (event.bKeyDown)
@@ -213,7 +222,6 @@ void FancyGame::OnKeyEvent(const KEY_EVENT_RECORD& event)
 			case VK_SPACE:
 				if (isCtrlPressed)
 				{
-					// HACK: Force a redraw
 					_isGameAreaDirty = true;
 				}
 				break;
@@ -253,7 +261,11 @@ void FancyGame::OnMouseEvent(const MOUSE_EVENT_RECORD& event)
 	auto mouseRow = static_cast<uint16_t>(event.dwMousePosition.Y / CELL_SIZE);
 	_currentMouseCell = { mouseColumn, mouseRow };
 
-	// TODO: If _isGameOver and double-click, reset game state
+	if (_isGameOver &&
+		event.dwEventFlags & DOUBLE_CLICK)
+	{
+		Reset();
+	}
 
 	if (event.dwEventFlags == 0 &&
 		event.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)

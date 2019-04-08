@@ -12,6 +12,7 @@ namespace tictactoe
 		virtual ~FancyGame();
 
 		virtual void Update() override;
+		virtual void Reset() override;
 
 	private:
 		void OnKeyEvent(const KEY_EVENT_RECORD& event);

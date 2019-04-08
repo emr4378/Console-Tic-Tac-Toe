@@ -90,10 +90,23 @@ UnmarkResult GameBoard::Unmark(PlayerID playerID, const BoardPosition& position)
 	else
 	{
 		_grid[position.y][position.x] = kInvalidPlayerID;
-		ResetWin();
+		ClearWin();
 		result = UnmarkResult::Success;
 	}
 	return result;
+}
+
+void GameBoard::Clear()
+{
+	for (uint32_t row = 0; row < _rows; row++)
+	{
+		for (uint32_t column = 0; column < _columns; column++)
+		{
+			_grid[row][column] = kInvalidPlayerID;
+		}
+	}
+
+	ClearWin();
 }
 
 bool GameBoard::IsValidPosition(const BoardPosition& position) const
@@ -147,7 +160,7 @@ void GameBoard::CheckForWin(PlayerID playerID, const BoardPosition& position)
 	}
 }
 
-void GameBoard::ResetWin()
+void GameBoard::ClearWin()
 {
 	_winningPositions.clear();
 	_winningPlayerID = kInvalidPlayerID;

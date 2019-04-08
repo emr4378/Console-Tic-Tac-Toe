@@ -13,6 +13,7 @@ namespace tictactoe
 		virtual ~GameSimulation();
 
 		virtual void Update() = 0;
+		virtual void Reset();
 
 		MarkResult Mark(const BoardPosition& position);
 		void Undo();
@@ -27,5 +28,6 @@ namespace tictactoe
 		UndoManager<PlayerMove> _moveHistory;
 
 		PlayerID _activePlayer;
+		bool _isGameOver;
 	};
 }

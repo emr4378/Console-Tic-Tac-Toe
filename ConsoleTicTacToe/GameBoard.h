@@ -40,6 +40,7 @@ namespace tictactoe
 
 		MarkResult Mark(PlayerID playerID, const BoardPosition& position);
 		UnmarkResult Unmark(PlayerID playerID, const BoardPosition& position);
+		void Clear();
 
 		bool IsValidPosition(const BoardPosition& position) const;
 		PlayerID GetMarker(const BoardPosition& position) const;
@@ -53,7 +54,7 @@ namespace tictactoe
 
 	private:
 		void CheckForWin(PlayerID playerID, const BoardPosition& position);
-		void ResetWin();
+		void ClearWin();
 		uint16_t CountConsecutive(
 			PlayerID marker,
 			BoardPosition position,
