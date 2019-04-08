@@ -19,6 +19,7 @@ GameBoard::GameBoard(uint32_t columns, uint32_t rows, uint32_t winCondition) :
 	_rows(rows),
 	_winCondition(winCondition),
 	_grid(nullptr),
+	_markerCount(0),
 	_winningPlayerID(kInvalidPlayerID),
 	_winningPositions()
 {
@@ -68,6 +69,7 @@ MarkResult GameBoard::Mark(PlayerID playerID, const BoardPosition& position)
 	else
 	{
 		_grid[position.y][position.x] = playerID;
+		_markerCount++;
 		CheckForWin(playerID, position);
 		result = MarkResult::Success;
 	}
@@ -90,6 +92,7 @@ UnmarkResult GameBoard::Unmark(PlayerID playerID, const BoardPosition& position)
 	else
 	{
 		_grid[position.y][position.x] = kInvalidPlayerID;
+		_markerCount--;
 		ClearWin();
 		result = UnmarkResult::Success;
 	}
@@ -105,6 +108,7 @@ void GameBoard::Clear()
 			_grid[row][column] = kInvalidPlayerID;
 		}
 	}
+	_markerCount = 0;
 
 	ClearWin();
 }

@@ -6,6 +6,13 @@
 
 namespace tictactoe
 {
+	enum class GameStatus
+	{
+		Active,
+		Won,
+		Draw
+	};
+
 	class GameSimulation
 	{
 	public:
@@ -15,19 +22,25 @@ namespace tictactoe
 		virtual bool Update() = 0;
 		virtual void Reset();
 
+		PlayerID GetActivePlayer() const { return _activePlayer; }
+		GameStatus GetGameStatus() const { return _gameStatus; }
+
 		MarkResult Mark(const BoardPosition& position);
 		void Undo();
 		void Redo();
 
 	protected:
+		void UpdateGameStatus();
 		void OnUndo(const PlayerMove& move);
 		void OnRedo(const PlayerMove& move);
 
-		// TODO: private:
+	protected:
 		GameBoard _gameBoard;
+
+	private:
 		UndoManager<PlayerMove> _moveHistory;
 
 		PlayerID _activePlayer;
-		bool _isGameOver;
+		GameStatus _gameStatus;
 	};
 }

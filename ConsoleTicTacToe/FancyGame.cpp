@@ -8,7 +8,7 @@ using namespace tictactoe;
 #define BORDER_SIZE	1
 #define CELL_SIZE	(MARK_SIZE + (2 * PAD_SIZE) + BORDER_SIZE)
 
-#define INFO_AREA_SIZE	1
+#define INFO_AREA_SIZE	2
 
 #define VK_Y	0x59
 #define VK_Z	0x5A
@@ -53,7 +53,6 @@ bool FancyGame::Update()
 
 	_consoleInterface.Update();
 
-	const PlayerID winningPlayerID = _gameBoard.GetWinningPlayerID();
 	const ConsoleSize minBufferSize = _consoleInterface.GetMinBufferSize();
 	const uint16_t numColumns = minBufferSize.width / CELL_SIZE;
 	const uint16_t numRows = minBufferSize.height / CELL_SIZE;
@@ -74,32 +73,32 @@ bool FancyGame::Update()
 	{
 		_isInfoPanelDirty = true;
 
-		if (winningPlayerID == kInvalidPlayerID)
+		if (GetGameStatus() == GameStatus::Active)
 		{
 			// Draw a temporary marker in the current mouse cell.
 			if (_gameBoard.IsValidPosition(_currentMouseCell) &&
 				_gameBoard.GetMarker(_currentMouseCell) == kInvalidPlayerID)
 			{
-				DrawPlayerMarker(sGetMarkerRect(_currentMouseCell.y, _currentMouseCell.x), _activePlayer, ConsoleColor::DarkGray);
+				DrawPlayerMarker(sGetMarkerRect(_currentMouseCell.y, _currentMouseCell.x), GetActivePlayer(), ConsoleColor::DarkGray);
 			}
 
 			// Cleanup any temporary marker in the previous mouse cell.
 			if (_gameBoard.IsValidPosition(_prevMouseCell) &&
 				_gameBoard.GetMarker(_prevMouseCell) == kInvalidPlayerID)
 			{
-				DrawPlayerMarker(sGetMarkerRect(_prevMouseCell.y, _prevMouseCell.x), _activePlayer, ConsoleColor::Black);
+				DrawPlayerMarker(sGetMarkerRect(_prevMouseCell.y, _prevMouseCell.x), GetActivePlayer(), ConsoleColor::Black);
 			}
 		}
 	}
 
-	// Draw the game board
+	// Draw the game area.
 	if (_isGameAreaDirty)
 	{
 		_consoleInterface.Clear();
 		_isInfoPanelDirty = true;
 
-		// If a player has one, highlight the backgrounds of the winning cells.
-		if (winningPlayerID != kInvalidPlayerID)
+		// If a player has won, highlight the backgrounds of the winning cells.
+		if (GetGameStatus() == GameStatus::Won)
 		{
 			const auto& positionList = _gameBoard.GetWinPositionList();
 			for (auto iter = positionList.begin(); iter != positionList.end(); iter++)
@@ -109,6 +108,7 @@ bool FancyGame::Update()
 			}
 		}
 
+		// Draw the current state of every cell in the gameboard and its borders.
 		for (uint16_t r = 0; r < numRows; r++)
 		{
 			for (uint16_t c = 0; c < numColumns; c++)
@@ -135,68 +135,83 @@ bool FancyGame::Update()
 		_isGameAreaDirty = false;
 	}
 
-	// Draw the info panel
+	// Draw the info panel.
 	if (_isInfoPanelDirty)
 	{
 		const ConsoleSize viewportSize = viewportRect.GetSize();
 
 		_consoleInterface.DrawRectangle(
 			viewportRect.left, viewportRect.top,
-			viewportRect.right + 1, viewportRect.top + INFO_AREA_SIZE,
+			viewportRect.right, viewportRect.top + INFO_AREA_SIZE,
 			ConsoleColor::Black,
 			ConsoleColor::Black);
 
 		char buffer[32];
 		int32_t bufferCharCount;
 
-		if (winningPlayerID != kInvalidPlayerID)
+		// Print the current turn information.
 		{
-			bufferCharCount = sprintf_s(
-				buffer,
-				"-- %s (%c) wins! --",
-				sGetPlayerName(winningPlayerID),
-				sGetPlayerChar(winningPlayerID));
+			ConsoleColor foreground;
+			ConsoleColor background;
+			if (GetGameStatus() == GameStatus::Won)
+			{
+				auto winningPlayerID = _gameBoard.GetWinningPlayerID();
+				bufferCharCount = sprintf_s(
+					buffer,
+					"-- %s (%c) wins! --",
+					sGetPlayerName(winningPlayerID),
+					sGetPlayerChar(winningPlayerID));
+				foreground = sGetPlayerColor(winningPlayerID);
+				background = ConsoleColor::DarkGray;
+			}
+			else if (GetGameStatus() == GameStatus::Draw)
+			{
+				bufferCharCount = sprintf_s(buffer, "- No spaces left: draw! -");
+				foreground = ConsoleColor::LightGray;
+				background = ConsoleColor::DarkGray;
+			}
+			else
+			{
+				bufferCharCount = sprintf_s(
+					buffer,
+					"%s's turn (%c)",
+					sGetPlayerName(GetActivePlayer()),
+					sGetPlayerChar(GetActivePlayer()));
+				foreground = ConsoleColor::Black;
+				background = ConsoleColor::White;
+			}
+
 			_consoleInterface.DrawString(
 				buffer,
-				viewportRect.left + (viewportSize.width / 2) - (bufferCharCount / 2),
+				//viewportRect.left + (viewportSize.width / 2) - (bufferCharCount / 2),
+				viewportRect.left,
 				viewportRect.top,
-				sGetPlayerColor(winningPlayerID),
-				ConsoleColor::DarkGray);
+				foreground,
+				background);
 		}
-		else
+
+		// Print the current mouse cell information.
 		{
-			bufferCharCount = sprintf_s(
-				buffer,
-				"%s's turn (%c)",
-				sGetPlayerName(_activePlayer),
-				sGetPlayerChar(_activePlayer));
+			if (_currentMouseCell.x < numColumns &&
+				_currentMouseCell.y < numRows)
+			{
+				bufferCharCount = sprintf_s(
+					buffer,
+					"X: %u, Y: %u\0",
+					_currentMouseCell.x,
+					_currentMouseCell.y);
+			}
+			else
+			{
+				bufferCharCount = sprintf_s(buffer, "X: --, Y: --");
+			}
 			_consoleInterface.DrawString(
 				buffer,
-				viewportRect.left + (viewportSize.width / 2) - (bufferCharCount / 2),
-				viewportRect.top,
+				viewportRect.left,
+				viewportRect.top + 1,
 				ConsoleColor::Black,
 				ConsoleColor::White);
 		}
-
-		if (_currentMouseCell.x < numColumns &&
-			_currentMouseCell.y < numRows)
-		{
-			bufferCharCount = sprintf_s(
-				buffer,
-				"X: %u, Y: %u\0",
-				_currentMouseCell.x,
-				_currentMouseCell.y);
-		}
-		else
-		{
-			bufferCharCount = sprintf_s(buffer, "X: --, Y: --");
-		}
-		_consoleInterface.DrawString(
-			buffer,
-			viewportRect.right - bufferCharCount,
-			viewportRect.top,
-			ConsoleColor::Black,
-			ConsoleColor::White);
 
 		_isInfoPanelDirty = false;
 	}
@@ -268,24 +283,25 @@ void FancyGame::OnMouseEvent(const MOUSE_EVENT_RECORD& event)
 	auto mouseRow = static_cast<uint16_t>(event.dwMousePosition.Y / CELL_SIZE);
 	_currentMouseCell = { mouseColumn, mouseRow };
 
-	if (_isGameOver &&
-		event.dwEventFlags & DOUBLE_CLICK)
-	{
-		Reset();
-	}
-
 	if (event.dwEventFlags == 0 &&
 		event.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)
 	{
-		MarkResult result = Mark(_currentMouseCell);
-		if (result == MarkResult::Success)
+		if (GetGameStatus() != GameStatus::Active)
 		{
-			_isGameAreaDirty = true;
-			_isInfoPanelDirty = true;
+			Reset();
 		}
 		else
 		{
-			// TODO: Some sort of error handling
+			MarkResult result = Mark(_currentMouseCell);
+			if (result == MarkResult::Success)
+			{
+				_isGameAreaDirty = true;
+				_isInfoPanelDirty = true;
+			}
+			else
+			{
+				// TODO: Some sort of error handling
+			}
 		}
 	}
 }

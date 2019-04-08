@@ -11,7 +11,7 @@ GameSimulation::GameSimulation(uint32_t m, uint32_t n, uint32_t k) :
 	_gameBoard(m, n, k),
 	_moveHistory(),
 	_activePlayer(0),
-	_isGameOver(false)
+	_gameStatus(GameStatus::Active)
 {
 	_moveHistory.SetCallbacks(
 		[=](const PlayerMove& move) { this->OnUndo(move); },
@@ -28,7 +28,7 @@ void GameSimulation::Reset()
 	_gameBoard.Clear();
 	_moveHistory.Clear();
 	_activePlayer = 0;
-	_isGameOver = false;
+	UpdateGameStatus();
 }
 
 MarkResult GameSimulation::Mark(const BoardPosition& position)
@@ -38,7 +38,7 @@ MarkResult GameSimulation::Mark(const BoardPosition& position)
 	{
 		_moveHistory.Add({ _activePlayer, position });
 		_activePlayer = sGetNextPlayerID(_activePlayer);
-		_isGameOver = (_gameBoard.GetWinningPlayerID() != kInvalidPlayerID);
+		UpdateGameStatus();
 	}
 	return result;
 }
@@ -54,11 +54,28 @@ void GameSimulation::Redo()
 	_moveHistory.Redo();
 }
 
+void GameSimulation::UpdateGameStatus()
+{
+	if (_gameBoard.GetWinningPlayerID() != kInvalidPlayerID)
+	{
+		_gameStatus = GameStatus::Won;
+	}
+	else if (_gameBoard.IsFilled())
+	{
+		_gameStatus = GameStatus::Draw;
+	}
+	else
+	{
+		_gameStatus = GameStatus::Active;
+	}
+}
+
 void GameSimulation::OnUndo(const PlayerMove& move)
 {
 	auto result = _gameBoard.Unmark(move.playerID, move.position);
 	assert(result == UnmarkResult::Success);
 	_activePlayer = sGetPrevPlayerID(_activePlayer);
+	UpdateGameStatus();
 }
 
 
@@ -67,6 +84,7 @@ void GameSimulation::OnRedo(const PlayerMove& move)
 	auto result = _gameBoard.Mark(move.playerID, move.position);
 	assert(result == MarkResult::Success);
 	_activePlayer = sGetNextPlayerID(_activePlayer);
+	UpdateGameStatus();
 }
 
 static PlayerID sGetNextPlayerID(PlayerID id)

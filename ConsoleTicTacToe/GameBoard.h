@@ -49,6 +49,7 @@ namespace tictactoe
 		uint32_t GetColumns() const { return _columns; }
 		uint32_t GetWinCondition() const { return _winCondition; }
 
+		bool IsFilled() const { return _markerCount >= _columns * _rows; }
 		PlayerID GetWinningPlayerID() const { return _winningPlayerID; }
 		const WinPositionList& GetWinPositionList() const { return _winningPositions; }
 
@@ -66,6 +67,7 @@ namespace tictactoe
 		uint32_t _winCondition;	// k
 
 		PlayerID** _grid;
+		uint32_t _markerCount;
 
 		PlayerID _winningPlayerID;
 		WinPositionList _winningPositions;
