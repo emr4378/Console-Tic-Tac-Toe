@@ -27,7 +27,7 @@ namespace tictactoe
 		virtual bool Update() = 0;
 		virtual void Reset();
 
-		PlayerID GetActivePlayer() const { return _activePlayer; }
+		PlayerID GetActivePlayer() const { return _gameStatus == GameStatus::Active ? _activePlayer : kInvalidPlayerID; }
 		GameStatus GetGameStatus() const { return _gameStatus; }
 
 		MarkResult Mark(const BoardPosition& position);

@@ -195,7 +195,7 @@ bool BasicGame::ExecuteStatusCommand()
 		case GameStatus::Won:
 			std::cout
 				<< sGetPlayerName(_gameBoard.GetWinningPlayerID())
-				<< " (" << sGetPlayerChar(GetActivePlayer()) << ")"
+				<< " (" << sGetPlayerChar(_gameBoard.GetWinningPlayerID()) << ")"
 				<< " wins!"
 				<< std::endl;
 			break;
