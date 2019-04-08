@@ -13,6 +13,7 @@ using namespace tictactoe;
 #define VK_Y	0x59
 #define VK_Z	0x5A
 
+static BoardPosition sGetBoardPosition(uint16_t x, uint16_t y);
 static ConsoleRect sGetBorderRect(uint16_t r, uint16_t c);
 static ConsoleRect sGetMarkerRect(uint16_t r, uint16_t c);
 static bool sConsoleRectIntersect(const ConsoleRect& a, const ConsoleRect& b);
@@ -229,6 +230,8 @@ void FancyGame::Reset()
 	_consoleInterface.Clear();
 	_isGameAreaDirty = true;
 	_isInfoPanelDirty = true;
+	_prevMouseCell = {};
+	_currentMouseCell = {};
 }
 
 void FancyGame::OnKeyEvent(const KEY_EVENT_RECORD& event)
@@ -242,10 +245,7 @@ void FancyGame::OnKeyEvent(const KEY_EVENT_RECORD& event)
 		switch (event.wVirtualKeyCode)
 		{
 			case VK_SPACE:
-				if (isCtrlPressed)
-				{
-					_isGameAreaDirty = true;
-				}
+				Reset();
 				break;
 
 			case VK_ESCAPE:
@@ -279,18 +279,17 @@ void FancyGame::OnKeyEvent(const KEY_EVENT_RECORD& event)
 
 void FancyGame::OnMouseEvent(const MOUSE_EVENT_RECORD& event)
 {
-	auto mouseColumn = static_cast<uint16_t>(event.dwMousePosition.X / CELL_SIZE);
-	auto mouseRow = static_cast<uint16_t>(event.dwMousePosition.Y / CELL_SIZE);
-	_currentMouseCell = { mouseColumn, mouseRow };
+	_currentMouseCell = sGetBoardPosition(event.dwMousePosition.X, event.dwMousePosition.Y);
 
-	if (event.dwEventFlags == 0 &&
-		event.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)
+	if (event.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)
 	{
-		if (GetGameStatus() != GameStatus::Active)
+		if (GetGameStatus() != GameStatus::Active &&
+			event.dwEventFlags & DOUBLE_CLICK)
 		{
 			Reset();
 		}
-		else
+
+		if (event.dwEventFlags == 0)
 		{
 			MarkResult result = Mark(_currentMouseCell);
 			if (result == MarkResult::Success)
@@ -381,6 +380,14 @@ void FancyGame::DrawPlayerMarkerWinBackground(const ConsoleRect& markerRect)
 		markerRect.right, markerRect.bottom,
 		ConsoleColor::DarkGreen,
 		ConsoleColor::LightGreen);
+}
+
+static BoardPosition sGetBoardPosition(uint16_t x, uint16_t y)
+{
+	return {
+		static_cast<uint32_t>(x / CELL_SIZE),
+		static_cast<uint32_t>((y - INFO_AREA_SIZE) / CELL_SIZE)
+	};
 }
 
 static ConsoleRect sGetBorderRect(uint16_t r, uint16_t c)
