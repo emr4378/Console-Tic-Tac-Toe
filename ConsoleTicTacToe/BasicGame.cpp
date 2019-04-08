@@ -8,23 +8,13 @@ using namespace tictactoe;
 std::ostream& operator<<(std::ostream& os, const BoardPosition& position);
 std::ostream& operator<<(std::ostream& os, const GameBoard& gameBoard);
 
-BasicGame::BasicGame() :
-	GameSimulation()
+BasicGame::BasicGame(uint32_t m, uint32_t n, uint32_t k) :
+	GameSimulation(m, n, k)
 {
 }
 
 BasicGame::~BasicGame()
 {
-}
-
-void BasicGame::Initialize(uint32_t m, uint32_t n, uint32_t k)
-{
-	GameSimulation::Initialize(m, n, k);
-}
-
-void BasicGame::Terminate()
-{
-	GameSimulation::Terminate();
 }
 
 void BasicGame::Update()

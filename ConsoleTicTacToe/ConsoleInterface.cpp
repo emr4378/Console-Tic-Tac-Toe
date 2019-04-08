@@ -5,7 +5,6 @@
 #include <utility>
 #include <cassert>
 #include <cstdio>
-#include <Windows.h>
 
 using namespace tictactoe;
 
@@ -27,50 +26,25 @@ ConsoleSize ConsoleRect::GetSize() const
 }
 
 ConsoleInterface::ConsoleInterface() :
-	_isInitialized(false),
-	_stdInHandle(INVALID_HANDLE_VALUE),
-	_stdOutHandle(INVALID_HANDLE_VALUE),
+	_stdInHandle(GetStdHandle(STD_INPUT_HANDLE)),
+	_stdOutHandle(GetStdHandle(STD_OUTPUT_HANDLE)),
 	_cachedInfo(),
-	_keyEventCallback(),
-	_mouseEventCallback(),
-	_resizeEventCallback(),
-	_minBufferSize(),
+	_keyEventCallback(nullptr),
+	_mouseEventCallback(nullptr),
+	_resizeEventCallback(nullptr),
+	_minBufferSize(kAbsoluteMinimumBufferSize),
 	_currentBufferSize(),
 	_currentBufferViewportRect()
 {
-}
+	assert(_stdInHandle != INVALID_HANDLE_VALUE);
+	assert(_stdOutHandle != INVALID_HANDLE_VALUE);
 
-void ConsoleInterface::Initialize(KeyEventCallback keyCb, MouseEventCallback mouseCb, ResizeEventCallback resizeCb)
-{
-	if (!_isInitialized)
+	// Cache the initial console state to be restored in the destructor.
+	SaveInitialConsoleState();
+
+	// Change the font to 8x8 Terminal to make our 'pixels' square while keeping the text somewhat legible.
+	CONSOLE_FONT_INFOEX fontInfo;
 	{
-		_keyEventCallback = keyCb;
-		_mouseEventCallback = mouseCb;
-		_resizeEventCallback = resizeCb;
-
-		_stdInHandle = GetStdHandle(STD_INPUT_HANDLE);
-		assert(_stdInHandle != INVALID_HANDLE_VALUE);
-
-		_stdOutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-		assert(_stdOutHandle != INVALID_HANDLE_VALUE);
-
-		bool result;
-
-		// Cache the initial console state to be restored on Terminate().
-		{
-			result = GetConsoleMode(_stdInHandle, &_cachedInfo.stdInMode);
-			assert(result);
-
-			result = GetConsoleScreenBufferInfo(_stdOutHandle, &_cachedInfo.stdOutScreenBufferInfo);
-			assert(result);
-
-			_cachedInfo.stdOutFontInfo.cbSize = sizeof(_cachedInfo.stdOutFontInfo);
-			result = GetCurrentConsoleFontEx(_stdOutHandle, false, &_cachedInfo.stdOutFontInfo);
-			assert(result);
-		}
-
-		// Change the font to 8x8 Terminal to make our 'pixels' square while keeping the text somewhat legible.
-		CONSOLE_FONT_INFOEX fontInfo;
 		fontInfo.cbSize = sizeof(fontInfo);
 		fontInfo.nFont = 0;
 		fontInfo.dwFontSize.X = 8;
@@ -78,60 +52,77 @@ void ConsoleInterface::Initialize(KeyEventCallback keyCb, MouseEventCallback mou
 		fontInfo.FontFamily = FF_DONTCARE;
 		fontInfo.FontWeight = FW_NORMAL;
 		wcscpy_s(fontInfo.FaceName, L"Terminal");
-		result = SetCurrentConsoleFontEx(_stdOutHandle, false, &fontInfo);
+	}
+	bool result = SetCurrentConsoleFontEx(_stdOutHandle, false, &fontInfo);
+	assert(result);
+
+	// Change STDIN console mode to allow mouse input.
+	result = SetConsoleMode(_stdInHandle, ENABLE_EXTENDED_FLAGS | ENABLE_PROCESSED_INPUT | ENABLE_MOUSE_INPUT);
+	assert(result);
+
+	_currentBufferSize = sCoordToConsoleSize(_cachedInfo.stdOutScreenBufferInfo.dwSize);
+	_currentBufferViewportRect = sSmallRectToConsoleRect(_cachedInfo.stdOutScreenBufferInfo.srWindow);
+}
+
+ConsoleInterface::~ConsoleInterface()
+{
+	Clear();
+
+	// Restore the initial console state that was cached in the constructor.
+	RestoreInitialConsoleState();
+}
+
+void ConsoleInterface::SaveInitialConsoleState()
+{
+	bool result;
+
+	// Cache the initial console state to be restored in the destructor.
+	{
+		result = GetConsoleMode(_stdInHandle, &_cachedInfo.stdInMode);
 		assert(result);
 
-		// Change STDIN console mode to allow mouse input.
-		result = SetConsoleMode(_stdInHandle, ENABLE_EXTENDED_FLAGS | ENABLE_PROCESSED_INPUT | ENABLE_MOUSE_INPUT);
+		result = GetConsoleScreenBufferInfo(_stdOutHandle, &_cachedInfo.stdOutScreenBufferInfo);
 		assert(result);
 
-		_minBufferSize = kAbsoluteMinimumBufferSize;
-		_currentBufferSize = sCoordToConsoleSize(_cachedInfo.stdOutScreenBufferInfo.dwSize);
-		_currentBufferViewportRect = sSmallRectToConsoleRect(_cachedInfo.stdOutScreenBufferInfo.srWindow);
-
-		_isInitialized = true;
+		_cachedInfo.stdOutFontInfo.cbSize = sizeof(_cachedInfo.stdOutFontInfo);
+		result = GetCurrentConsoleFontEx(_stdOutHandle, false, &_cachedInfo.stdOutFontInfo);
+		assert(result);
 	}
 }
 
-void ConsoleInterface::Terminate()
+void ConsoleInterface::RestoreInitialConsoleState()
 {
-	if (_isInitialized)
-	{
-		_keyEventCallback = NULL;
-		_mouseEventCallback = NULL;
-		_resizeEventCallback = NULL;
+	bool result = SetConsoleMode(_stdInHandle, _cachedInfo.stdInMode);
+	assert(result);
 
-		Clear();
+	result = SetConsoleTextAttribute(_stdOutHandle, _cachedInfo.stdOutScreenBufferInfo.wAttributes);
+	assert(result);
 
-		// Restore the initial console state that was cached in Initialize().
-		{
-			bool result = SetConsoleMode(_stdInHandle, _cachedInfo.stdInMode);
-			assert(result);
+	// HACK: To avoid issues with screen buffer <-> window size dependencies, set the window size to the smallest
+	// possible value before setting it back to the original size (see https://stackoverflow.com/a/40634467).
+	SMALL_RECT minWindowRect = { 0, 0, 1, 1 };
+	result = SetConsoleWindowInfo(_stdOutHandle, true, &minWindowRect);
+	assert(result);
 
-			result = SetConsoleTextAttribute(_stdOutHandle, _cachedInfo.stdOutScreenBufferInfo.wAttributes);
-			assert(result);
+	result = SetConsoleScreenBufferSize(_stdOutHandle, _cachedInfo.stdOutScreenBufferInfo.dwSize);
+	assert(result);
 
-			result = SetConsoleScreenBufferSize(_stdOutHandle, _cachedInfo.stdOutScreenBufferInfo.dwSize);
-			assert(result);
+	result = SetConsoleWindowInfo(_stdOutHandle, true, &_cachedInfo.stdOutScreenBufferInfo.srWindow);
+	assert(result);
 
-			result = SetCurrentConsoleFontEx(_stdOutHandle, false, &_cachedInfo.stdOutFontInfo);
-			assert(result);
-		}
+	result = SetCurrentConsoleFontEx(_stdOutHandle, false, &_cachedInfo.stdOutFontInfo);
+	assert(result);
+}
 
-		_minBufferSize = {};
-		_currentBufferSize = {};
-		_currentBufferViewportRect = {};
-		_cachedInfo = {};
-		_stdOutHandle = INVALID_HANDLE_VALUE;
-		_stdInHandle = INVALID_HANDLE_VALUE;
-		_isInitialized = false;
-	}
+void ConsoleInterface::SetCallbacks(KeyEventCallback keyCb, MouseEventCallback mouseCb, ResizeEventCallback resizeCb)
+{
+	_keyEventCallback = std::move(keyCb);
+	_mouseEventCallback = std::move(mouseCb);
+	_resizeEventCallback = std::move(resizeCb);
 }
 
 void ConsoleInterface::Update()
 {
-	assert(_isInitialized);
-
 	bool receivedResizeEvent = false;
 	DWORD inputEventCount;
 	if (GetNumberOfConsoleInputEvents(_stdInHandle, &inputEventCount) &&
@@ -334,8 +325,6 @@ void ConsoleInterface::DrawRectangle(uint16_t x0, uint16_t y0, uint16_t x1, uint
 
 void ConsoleInterface::Clear()
 {
-	assert(_isInitialized);
-
 	COORD topLeft = { 0, 0 };
 	DWORD bufferSize = _currentBufferSize.width * _currentBufferSize.height;
 	DWORD dummy;

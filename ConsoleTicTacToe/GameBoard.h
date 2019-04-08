@@ -30,10 +30,8 @@ namespace tictactoe
 	class GameBoard
 	{
 	public:
-		GameBoard();
-
-		void Initialize(uint32_t columns, uint32_t rows, uint32_t winCondition);
-		void Terminate();
+		GameBoard(uint32_t columns, uint32_t rows, uint32_t winCondition);
+		virtual ~GameBoard();
 
 		// TODO: Win condition check
 
@@ -47,8 +45,6 @@ namespace tictactoe
 		uint32_t GetWinCondition() const { return _winCondition; }
 
 	private:
-		bool _isInitialized;
-
 		uint32_t _columns;		// m
 		uint32_t _rows;			// n
 		uint32_t _winCondition;	// k

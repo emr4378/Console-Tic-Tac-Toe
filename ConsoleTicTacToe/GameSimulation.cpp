@@ -7,29 +7,19 @@ using namespace tictactoe;
 static PlayerID sGetNextPlayerID(PlayerID id);
 static PlayerID sGetPrevPlayerID(PlayerID id);
 
-GameSimulation::GameSimulation() :
-	_gameBoard(),
+GameSimulation::GameSimulation(uint32_t m, uint32_t n, uint32_t k) :
+	_gameBoard(m, n, k),
 	_moveHistory(),
 	_activePlayer(0)
 {
-}
-
-GameSimulation::~GameSimulation()
-{
-}
-
-void GameSimulation::Initialize(uint32_t m, uint32_t n, uint32_t k)
-{
-	_gameBoard.Initialize(m, n, k);
-	_moveHistory.Initialize(
+	_moveHistory.SetCallbacks(
 		[=](const PlayerMove& move) { this->OnUndo(move); },
 		[=](const PlayerMove& move) { this->OnRedo(move); });
 }
 
-void GameSimulation::Terminate()
+GameSimulation::~GameSimulation()
 {
-	_moveHistory.Terminate();
-	_gameBoard.Terminate();
+	_moveHistory.SetCallbacks(nullptr, nullptr);
 }
 
 MarkResult GameSimulation::Mark(const BoardPosition& position)

@@ -2,6 +2,8 @@
 
 #include <cstdint>
 #include <functional>
+
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
 namespace tictactoe
@@ -60,9 +62,10 @@ namespace tictactoe
 		typedef std::function<void(const ConsoleSize&)> ResizeEventCallback;
 
 		ConsoleInterface();
+		virtual ~ConsoleInterface();
 
-		void Initialize(KeyEventCallback keyCb, MouseEventCallback mouseCb, ResizeEventCallback resizeCb);
-		void Terminate();
+		void SetCallbacks(KeyEventCallback keyCb, MouseEventCallback mouseCb, ResizeEventCallback resizeCb);
+
 		void Update();
 
 		void SetMinBufferSize(const ConsoleSize& size);
@@ -89,8 +92,8 @@ namespace tictactoe
 			CONSOLE_SCREEN_BUFFER_INFO stdOutScreenBufferInfo;
 			CONSOLE_FONT_INFOEX stdOutFontInfo;
 		};
-
-		bool _isInitialized;
+		void SaveInitialConsoleState();
+		void RestoreInitialConsoleState();
 
 		HANDLE _stdInHandle;
 		HANDLE _stdOutHandle;

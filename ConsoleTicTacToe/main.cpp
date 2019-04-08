@@ -1,45 +1,16 @@
 #include "BasicGame.h"
 #include "FancyGame.h"
 
-#include <cassert>
 #include <iostream>
 #include <string>
-#include <Windows.h>
 
-#define NUM_PLAYERS 2
+static tictactoe::GameSimulation* sgGame = nullptr;
+static void sCreateGameSimulation(uint32_t m, uint32_t n, uint32_t k, bool isFancy);
+static void sDestroyGameSimulation();
 
-using namespace tictactoe;
+static BOOL sConsoleCtrlHandler(DWORD dwCtrlType);
 
-static GameSimulation* sgGame = nullptr;
-
-static BOOL sConsoleCtrlHandler(DWORD dwCtrlType)
-{
-	sgGame->Terminate();
-	return false;
-}
-
-static bool sTryParseUInt(const std::string& str, uint32_t* outValue)
-{
-	bool result = false;
-	*outValue = 0;
-
-	try
-	{
-		size_t pos;
-		auto value = std::stoul(str, &pos);
-		if (value < LONG_MAX && pos == str.length())
-		{
-			*outValue = value;
-			result = true;
-		}
-	}
-	catch (...)
-	{
-		// Do nothing.
-	}
-
-	return result;
-}
+static bool sTryParseUInt(const std::string& str, uint32_t* outValue);
 
 int main(int argc, char** argv)
 {
@@ -76,22 +47,66 @@ int main(int argc, char** argv)
 		}
 	}
 
-	bool addCtrlHandlerResult = SetConsoleCtrlHandler(sConsoleCtrlHandler, true);
-	assert(addCtrlHandlerResult);
-
-	sgGame = isFancy ?
-		static_cast<GameSimulation*>(new FancyGame()) :
-		static_cast<GameSimulation*>(new BasicGame());
-
-	sgGame->Initialize(m, n, k);
-	while (true)
+	// Create and run the game simulation.
+	sCreateGameSimulation(m, n, k, isFancy);
+	while (sgGame != nullptr)
 	{
+		// TODO: Some sort of exit condition
 		sgGame->Update();
 	}
-	sgGame->Terminate();
-
-	bool removeCtrlHandlerResult = SetConsoleCtrlHandler(sConsoleCtrlHandler, false);
-	assert(removeCtrlHandlerResult);
+	sDestroyGameSimulation();
 
 	return EXIT_SUCCESS;
+}
+
+static void sCreateGameSimulation(uint32_t m, uint32_t n, uint32_t k, bool isFancy)
+{
+	if (sgGame == nullptr)
+	{
+		SetConsoleCtrlHandler(sConsoleCtrlHandler, true);
+		sgGame = isFancy ?
+			static_cast<tictactoe::GameSimulation*>(new tictactoe::FancyGame(m, n, k)) :
+			static_cast<tictactoe::GameSimulation*>(new tictactoe::BasicGame(m, n, k));
+	}
+}
+
+static void sDestroyGameSimulation()
+{
+	if (sgGame != nullptr)
+	{
+		SetConsoleCtrlHandler(sConsoleCtrlHandler, false);
+		delete sgGame;
+		sgGame = nullptr;
+	}
+}
+
+static BOOL sConsoleCtrlHandler(DWORD dwCtrlType)
+{
+	// This ensures everything is cleaned up regardless of how the game is closed.
+	// Primarily needed to ensure ConsoleInterface restores the initial console state.
+	sDestroyGameSimulation();
+	return false;
+}
+
+static bool sTryParseUInt(const std::string& str, uint32_t* outValue)
+{
+	bool result = false;
+	*outValue = 0;
+
+	try
+	{
+		size_t pos;
+		auto value = std::stoul(str, &pos);
+		if (value < LONG_MAX && pos == str.length())
+		{
+			*outValue = value;
+			result = true;
+		}
+	}
+	catch (...)
+	{
+		// Do nothing.
+	}
+
+	return result;
 }

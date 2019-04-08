@@ -8,11 +8,9 @@ namespace tictactoe
 	class FancyGame : public GameSimulation
 	{
 	public:
-		FancyGame();
+		FancyGame(uint32_t m, uint32_t n, uint32_t k);
 		virtual ~FancyGame();
 
-		virtual void Initialize(uint32_t m, uint32_t n, uint32_t k) override;
-		virtual void Terminate() override;
 		virtual void Update() override;
 
 	private:

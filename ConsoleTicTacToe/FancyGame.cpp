@@ -19,26 +19,16 @@ static const char* sGetPlayerName(PlayerID playerID);
 static char sGetPlayerChar(PlayerID playerID);
 static ConsoleColor sGetPlayerColor(PlayerID playerID);
 
-FancyGame::FancyGame() :
-	GameSimulation(),
+FancyGame::FancyGame(uint32_t m, uint32_t n, uint32_t k) :
+	GameSimulation(m, n, k),
 	_consoleInterface(),
-	_isGameAreaDirty(false),
-	_isInfoPanelDirty(false),
+	_isGameAreaDirty(true),
+	_isInfoPanelDirty(true),
 	_currentMouseCell(),
 	_prevMouseCell(),
 	_prevViewportRect()
 {
-}
-
-FancyGame::~FancyGame()
-{
-}
-
-void FancyGame::Initialize(uint32_t m, uint32_t n, uint32_t k)
-{
-	GameSimulation::Initialize(m, n, k);
-
-	_consoleInterface.Initialize(
+	_consoleInterface.SetCallbacks(
 		[=](const KEY_EVENT_RECORD& event) { this->OnKeyEvent(event); },
 		[=](const MOUSE_EVENT_RECORD& event) { this->OnMouseEvent(event); },
 		[=](const ConsoleSize& newSize) { this->OnResizeEvent(newSize); });
@@ -46,18 +36,10 @@ void FancyGame::Initialize(uint32_t m, uint32_t n, uint32_t k)
 	uint16_t minBufferWidth = (CELL_SIZE * m);
 	uint16_t minBufferHeight = (CELL_SIZE * n) + INFO_AREA_SIZE;
 	_consoleInterface.SetMinBufferSize({ minBufferWidth, minBufferHeight });
-
-	_isGameAreaDirty = true;
-	_isInfoPanelDirty = true;
-	_currentMouseCell = {};
-	_prevMouseCell = {};
-	_prevViewportRect = {};
 }
 
-void FancyGame::Terminate()
+FancyGame::~FancyGame()
 {
-	_consoleInterface.Terminate();
-	GameSimulation::Terminate();
 }
 
 void FancyGame::Update()

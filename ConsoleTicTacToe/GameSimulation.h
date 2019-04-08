@@ -9,11 +9,9 @@ namespace tictactoe
 	class GameSimulation
 	{
 	public:
-		GameSimulation();
+		GameSimulation(uint32_t m, uint32_t n, uint32_t k);
 		virtual ~GameSimulation();
 
-		virtual void Initialize(uint32_t m, uint32_t n, uint32_t k);
-		virtual void Terminate();
 		virtual void Update() = 0;
 
 		MarkResult Mark(const BoardPosition& position);
