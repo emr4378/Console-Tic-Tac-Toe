@@ -7,7 +7,7 @@ using namespace tictactoe;
 #define BORDER_SIZE	1
 #define CELL_SIZE	(MARK_SIZE + (2 * PAD_SIZE) + BORDER_SIZE)
 
-#define INFO_AREA_SIZE	2
+#define INFO_AREA_SIZE	3
 
 #define VK_Y	0x59
 #define VK_Z	0x5A
@@ -139,15 +139,56 @@ bool FancyGame::Update()
 	if (_isInfoPanelDirty)
 	{
 		const ConsoleSize viewportSize = viewportRect.GetSize();
+		uint16_t minWidth = min(minBufferSize.width, viewportSize.width + 1);
 
-		_consoleInterface.DrawRectangle(
-			viewportRect.left, viewportRect.top,
-			viewportRect.right, viewportRect.top + INFO_AREA_SIZE,
-			ConsoleColor::Black,
-			ConsoleColor::Black);
+		for (uint16_t r = 0; r < INFO_AREA_SIZE - 1; r++)
+		{
+			_consoleInterface.DrawLine(
+				viewportRect.left, viewportRect.top + r,
+				viewportRect.left + minWidth, viewportRect.top + r,
+				ConsoleColor::White);
+		}
 
 		char buffer[32];
 		int32_t bufferCharCount;
+
+		// Print the general game information
+		{
+			bufferCharCount = sprintf_s(
+				buffer,
+				"Goal: %u-in-a-row",
+				_gameBoard.GetWinCondition());
+			_consoleInterface.DrawString(
+				buffer,
+				viewportRect.left,
+				viewportRect.top,
+				ConsoleColor::Black,
+				ConsoleColor::White);
+		}
+
+		// Print the current mouse cell information.
+		{
+			if (_currentMouseCell.x < numColumns &&
+				_currentMouseCell.y < numRows)
+			{
+				bufferCharCount = sprintf_s(
+					buffer,
+					"X: %u, Y: %u\0",
+					_currentMouseCell.x,
+					_currentMouseCell.y);
+			}
+			else
+			{
+				bufferCharCount = sprintf_s(buffer, "X: --, Y: --");
+			}
+
+			_consoleInterface.DrawString(
+				buffer,
+				viewportRect.left + minWidth - bufferCharCount,
+				viewportRect.top,
+				ConsoleColor::Black,
+				ConsoleColor::White);
+		}
 
 		// Print the current turn information.
 		{
@@ -183,34 +224,10 @@ bool FancyGame::Update()
 
 			_consoleInterface.DrawString(
 				buffer,
-				//viewportRect.left + (viewportSize.width / 2) - (bufferCharCount / 2),
-				viewportRect.left,
-				viewportRect.top,
+				viewportRect.left + (minWidth / 2) - (bufferCharCount / 2),
+				viewportRect.top + 1,
 				foreground,
 				background);
-		}
-
-		// Print the current mouse cell information.
-		{
-			if (_currentMouseCell.x < numColumns &&
-				_currentMouseCell.y < numRows)
-			{
-				bufferCharCount = sprintf_s(
-					buffer,
-					"X: %u, Y: %u\0",
-					_currentMouseCell.x,
-					_currentMouseCell.y);
-			}
-			else
-			{
-				bufferCharCount = sprintf_s(buffer, "X: --, Y: --");
-			}
-			_consoleInterface.DrawString(
-				buffer,
-				viewportRect.left,
-				viewportRect.top + 1,
-				ConsoleColor::Black,
-				ConsoleColor::White);
 		}
 
 		_isInfoPanelDirty = false;
