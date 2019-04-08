@@ -13,6 +13,8 @@ using namespace tictactoe;
 #define VK_Y	0x59
 #define VK_Z	0x5A
 
+static ConsoleRect sGetBorderRect(uint16_t r, uint16_t c);
+static ConsoleRect sGetMarkerRect(uint16_t r, uint16_t c);
 static bool sConsoleRectIntersect(const ConsoleRect& a, const ConsoleRect& b);
 
 static const char* sGetPlayerName(PlayerID playerID);
@@ -46,6 +48,11 @@ void FancyGame::Update()
 {
 	_consoleInterface.Update();
 
+	const PlayerID winningPlayerID = _gameBoard.GetWinningPlayerID();
+	const ConsoleSize minBufferSize = _consoleInterface.GetMinBufferSize();
+	const uint16_t numColumns = minBufferSize.width / CELL_SIZE;
+	const uint16_t numRows = minBufferSize.height / CELL_SIZE;
+
 	// If the viewport has been scrolled the game area will need to be redrawn.
 	const ConsoleRect& viewportRect = _consoleInterface.GetCurrentBufferViewportRect();
 	if (viewportRect.left != _prevViewportRect.left ||
@@ -61,6 +68,23 @@ void FancyGame::Update()
 		_prevMouseCell.y != _currentMouseCell.y)
 	{
 		_isInfoPanelDirty = true;
+
+		if (winningPlayerID == kInvalidPlayerID)
+		{
+			// Draw a temporary marker in the current mouse cell.
+			if (_gameBoard.IsValidPosition(_currentMouseCell) &&
+				_gameBoard.GetMarker(_currentMouseCell) == kInvalidPlayerID)
+			{
+				DrawPlayerMarker(sGetMarkerRect(_currentMouseCell.y, _currentMouseCell.x), _activePlayer, ConsoleColor::DarkGray);
+			}
+
+			// Cleanup any temporary marker in the previous mouse cell.
+			if (_gameBoard.IsValidPosition(_prevMouseCell) &&
+				_gameBoard.GetMarker(_prevMouseCell) == kInvalidPlayerID)
+			{
+				DrawPlayerMarker(sGetMarkerRect(_prevMouseCell.y, _prevMouseCell.x), _activePlayer, ConsoleColor::Black);
+			}
+		}
 	}
 
 	// Draw the game board
@@ -69,84 +93,36 @@ void FancyGame::Update()
 		_consoleInterface.Clear();
 		_isInfoPanelDirty = true;
 
-		const ConsoleSize minBufferSize = _consoleInterface.GetMinBufferSize();
-		const uint16_t numColumns = minBufferSize.width / CELL_SIZE;
-		const uint16_t numRows = minBufferSize.height / CELL_SIZE;
+		// If a player has one, highlight the backgrounds of the winning cells.
+		if (winningPlayerID != kInvalidPlayerID)
+		{
+			const auto& positionList = _gameBoard.GetWinPositionList();
+			for (auto iter = positionList.begin(); iter != positionList.end(); iter++)
+			{
+				ConsoleRect markerRect = sGetMarkerRect(iter->y, iter->x);
+				DrawPlayerMarkerWinBackground(markerRect);
+			}
+		}
+
 		for (uint16_t r = 0; r < numRows; r++)
 		{
 			for (uint16_t c = 0; c < numColumns; c++)
 			{
-				ConsoleRect borderRect;
-				borderRect.left = (c + 0) * CELL_SIZE;
-				borderRect.top = (r + 0) * CELL_SIZE + INFO_AREA_SIZE;
-				borderRect.right = (c + 1) * CELL_SIZE;
-				borderRect.bottom = (r + 1) * CELL_SIZE + INFO_AREA_SIZE;
-
+				ConsoleRect borderRect = sGetBorderRect(r, c);
 				if (sConsoleRectIntersect(borderRect, viewportRect))
 				{
-					ConsoleRect markRect = borderRect;
-					markRect.left += BORDER_SIZE + PAD_SIZE;
-					markRect.top += BORDER_SIZE + PAD_SIZE;
-					markRect.right -= BORDER_SIZE + PAD_SIZE;
-					markRect.bottom -= BORDER_SIZE + PAD_SIZE;
-
-					// Draw player marker
-					PlayerID playerID = _gameBoard.GetMarker({ c, r });
-					switch (playerID)
-					{
-					case kInvalidPlayerID:
-						// Do nothing - empty square.
-						break;
-
-					case 0:
-						_consoleInterface.DrawLine(
-							markRect.left, markRect.top,
-							markRect.right, markRect.bottom,
-							sGetPlayerColor(playerID));
-
-						_consoleInterface.DrawLine(
-							markRect.right, markRect.top,
-							markRect.left, markRect.bottom,
-							sGetPlayerColor(playerID));
-						break;
-
-					case 1:
-						_consoleInterface.DrawCircle(
-							(markRect.right + markRect.left) / 2,
-							(markRect.top + markRect.bottom) / 2,
-							MARK_SIZE / 2,
-							sGetPlayerColor(playerID));
-						break;
-
-					default:
-						assert(false);
-						break;
-					}
-					// TODO: static_assert(NUM_PLAYERS == 2);
-
-					// Draw right-side border
 					if (c < numColumns - 1)
 					{
-						_consoleInterface.DrawLine(
-							borderRect.right,
-							borderRect.top + BORDER_SIZE,
-							borderRect.right,
-							borderRect.bottom - BORDER_SIZE,
-							ConsoleColor::LightGray);
-						static_assert(BORDER_SIZE == 1, "Border size assumed to be 1 here.");
+						DrawCellBorderRightSide(borderRect);
 					}
 
-					// Draw bottom-side border
 					if (r < numRows - 1)
 					{
-						_consoleInterface.DrawLine(
-							borderRect.left + BORDER_SIZE,
-							borderRect.bottom,
-							borderRect.right - BORDER_SIZE,
-							borderRect.bottom,
-							ConsoleColor::LightGray);
-						static_assert(BORDER_SIZE == 1, "Border size assumed to be 1 here.");
+						DrawCellBorderBottomSide(borderRect);
 					}
+
+					ConsoleRect markerRect = sGetMarkerRect(r, c);
+					DrawPlayerMarker(markerRect, _gameBoard.GetMarker({ c, r }));
 				}
 			}
 		}
@@ -166,22 +142,53 @@ void FancyGame::Update()
 			ConsoleColor::Black);
 
 		char buffer[32];
-		auto strLength = sprintf_s(
-			buffer,
-			"%s's turn (%c)",
-			sGetPlayerName(_activePlayer),
-			sGetPlayerChar(_activePlayer));
-		_consoleInterface.DrawString(
-			buffer,
-			viewportRect.left + (viewportSize.width / 2) - (strLength / 2),
-			viewportRect.top,
-			ConsoleColor::Black,
-			ConsoleColor::White);
+		int32_t bufferCharCount;
 
-		strLength = sprintf_s(buffer, "X: %u, Y: %u\0", _currentMouseCell.x, _currentMouseCell.y);
+		if (winningPlayerID != kInvalidPlayerID)
+		{
+			bufferCharCount = sprintf_s(
+				buffer,
+				"-- %s (%c) wins! --",
+				sGetPlayerName(winningPlayerID),
+				sGetPlayerChar(winningPlayerID));
+			_consoleInterface.DrawString(
+				buffer,
+				viewportRect.left + (viewportSize.width / 2) - (bufferCharCount / 2),
+				viewportRect.top,
+				sGetPlayerColor(winningPlayerID),
+				ConsoleColor::DarkGray);
+		}
+		else
+		{
+			bufferCharCount = sprintf_s(
+				buffer,
+				"%s's turn (%c)",
+				sGetPlayerName(_activePlayer),
+				sGetPlayerChar(_activePlayer));
+			_consoleInterface.DrawString(
+				buffer,
+				viewportRect.left + (viewportSize.width / 2) - (bufferCharCount / 2),
+				viewportRect.top,
+				ConsoleColor::Black,
+				ConsoleColor::White);
+		}
+
+		if (_currentMouseCell.x < numColumns &&
+			_currentMouseCell.y < numRows)
+		{
+			bufferCharCount = sprintf_s(
+				buffer,
+				"X: %u, Y: %u\0",
+				_currentMouseCell.x,
+				_currentMouseCell.y);
+		}
+		else
+		{
+			bufferCharCount = sprintf_s(buffer, "X: --, Y: --");
+		}
 		_consoleInterface.DrawString(
 			buffer,
-			viewportRect.right - strLength,
+			viewportRect.right - bufferCharCount,
 			viewportRect.top,
 			ConsoleColor::Black,
 			ConsoleColor::White);
@@ -246,6 +253,8 @@ void FancyGame::OnMouseEvent(const MOUSE_EVENT_RECORD& event)
 	auto mouseRow = static_cast<uint16_t>(event.dwMousePosition.Y / CELL_SIZE);
 	_currentMouseCell = { mouseColumn, mouseRow };
 
+	// TODO: If _isGameOver and double-click, reset game state
+
 	if (event.dwEventFlags == 0 &&
 		event.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)
 	{
@@ -266,6 +275,97 @@ void FancyGame::OnResizeEvent(const ConsoleSize& newSize)
 {
 	_isGameAreaDirty = true;
 	_isInfoPanelDirty = true;
+}
+
+void FancyGame::DrawCellBorderRightSide(const ConsoleRect& borderRect)
+{
+	_consoleInterface.DrawLine(
+		borderRect.right,
+		borderRect.top + BORDER_SIZE,
+		borderRect.right,
+		borderRect.bottom - BORDER_SIZE,
+		ConsoleColor::LightGray);
+	static_assert(BORDER_SIZE == 1, "Border size assumed to be 1 here.");
+}
+
+void FancyGame::DrawCellBorderBottomSide(const ConsoleRect& borderRect)
+{
+	_consoleInterface.DrawLine(
+		borderRect.left + BORDER_SIZE,
+		borderRect.bottom,
+		borderRect.right - BORDER_SIZE,
+		borderRect.bottom,
+		ConsoleColor::LightGray);
+	static_assert(BORDER_SIZE == 1, "Border size assumed to be 1 here.");
+}
+
+void FancyGame::DrawPlayerMarker(const ConsoleRect& markerRect, PlayerID playerID)
+{
+	DrawPlayerMarker(markerRect, playerID, sGetPlayerColor(playerID));
+}
+
+void FancyGame::DrawPlayerMarker(const ConsoleRect& markerRect, PlayerID playerID, ConsoleColor color)
+{
+	switch (playerID)
+	{
+		case kInvalidPlayerID:
+			// Do nothing - empty square.
+			break;
+
+		case 0:
+			_consoleInterface.DrawLine(
+				markerRect.left, markerRect.top,
+				markerRect.right, markerRect.bottom,
+				color);
+
+			_consoleInterface.DrawLine(
+				markerRect.right, markerRect.top,
+				markerRect.left, markerRect.bottom,
+				color);
+			break;
+
+		case 1:
+			_consoleInterface.DrawCircle(
+				(markerRect.right + markerRect.left) / 2,
+				(markerRect.top + markerRect.bottom) / 2,
+				MARK_SIZE / 2,
+				color);
+			break;
+
+		default:
+			assert(false);
+			break;
+	}
+	// TODO: static_assert(NUM_PLAYERS == 2);
+}
+
+void FancyGame::DrawPlayerMarkerWinBackground(const ConsoleRect& markerRect)
+{
+	_consoleInterface.DrawRectangle(
+		markerRect.left, markerRect.top,
+		markerRect.right, markerRect.bottom,
+		ConsoleColor::DarkGreen,
+		ConsoleColor::LightGreen);
+}
+
+static ConsoleRect sGetBorderRect(uint16_t r, uint16_t c)
+{
+	ConsoleRect borderRect;
+	borderRect.left = (c + 0) * CELL_SIZE;
+	borderRect.top = (r + 0) * CELL_SIZE + INFO_AREA_SIZE;
+	borderRect.right = (c + 1) * CELL_SIZE;
+	borderRect.bottom = (r + 1) * CELL_SIZE + INFO_AREA_SIZE;
+	return borderRect;
+}
+
+static ConsoleRect sGetMarkerRect(uint16_t r, uint16_t c)
+{
+	ConsoleRect markerRect = sGetBorderRect(r, c);
+	markerRect.left += BORDER_SIZE + PAD_SIZE;
+	markerRect.top += BORDER_SIZE + PAD_SIZE;
+	markerRect.right -= BORDER_SIZE + PAD_SIZE;
+	markerRect.bottom -= BORDER_SIZE + PAD_SIZE;
+	return markerRect;
 }
 
 static bool sConsoleRectIntersect(const ConsoleRect& a, const ConsoleRect& b)

@@ -18,6 +18,12 @@ namespace tictactoe
 		void OnMouseEvent(const MOUSE_EVENT_RECORD& event);
 		void OnResizeEvent(const ConsoleSize& newSize);
 
+		void DrawCellBorderRightSide(const ConsoleRect& borderRect);
+		void DrawCellBorderBottomSide(const ConsoleRect& borderRect);
+		void DrawPlayerMarker(const ConsoleRect& markerRect, PlayerID playerID);
+		void DrawPlayerMarker(const ConsoleRect& markerRect, PlayerID playerID, ConsoleColor color);
+		void DrawPlayerMarkerWinBackground(const ConsoleRect& markerRect);
+
 	private:
 		ConsoleInterface _consoleInterface;
 
