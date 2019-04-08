@@ -18,9 +18,9 @@ static ConsoleRect sSmallRectToConsoleRect(const SMALL_RECT& rect);
 
 ConsoleSize ConsoleRect::GetSize() const
 {
-	assert(right > left);
-	assert(bottom > top);
-	return { static_cast<uint16_t>(right - left), static_cast<uint16_t>(bottom - top) };
+	auto width = max(right - left, 0);
+	auto height = max(bottom - top, 0);
+	return { static_cast<uint16_t>(width), static_cast<uint16_t>(height) };
 }
 
 ConsoleInterface::ConsoleInterface() :
@@ -62,6 +62,13 @@ ConsoleInterface::ConsoleInterface() :
 	CONSOLE_CURSOR_INFO cursorInfo = _cachedInfo.stdOutCursorInfo;
 	cursorInfo.bVisible = false;
 	result = SetConsoleCursorInfo(_stdOutHandle, &cursorInfo);
+	assert(result);
+
+	// Scroll to the top-left of the cursor console buffer.
+	SMALL_RECT windowInfo = _cachedInfo.stdOutScreenBufferInfo.srWindow;
+	windowInfo.Left = 0;
+	windowInfo.Top = 0;
+	result = SetConsoleWindowInfo(_stdOutHandle, true, &windowInfo);
 	assert(result);
 
 	_currentBufferSize = sCoordToConsoleSize(_cachedInfo.stdOutScreenBufferInfo.dwSize);
@@ -129,6 +136,9 @@ void ConsoleInterface::RestoreInitialConsoleState()
 
 	// OUT - Cursor info
 	result = SetConsoleCursorInfo(_stdOutHandle, &_cachedInfo.stdOutCursorInfo);
+	assert(result);
+
+	result = SetConsoleCursorPosition(_stdOutHandle, { 0, 0 });
 	assert(result);
 
 	// IN - Console mode
