@@ -2,8 +2,6 @@
 
 using namespace tictactoe;
 
-#define NUM_PLAYERS 2
-
 static PlayerID sGetNextPlayerID(PlayerID id);
 static PlayerID sGetPrevPlayerID(PlayerID id);
 
@@ -89,10 +87,10 @@ void GameSimulation::OnRedo(const PlayerMove& move)
 
 static PlayerID sGetNextPlayerID(PlayerID id)
 {
-	return (id + 1) % NUM_PLAYERS;
+	return (id + 1) % GameSimulation::kNumPlayers;
 }
 
 static PlayerID sGetPrevPlayerID(PlayerID id)
 {
-	return (id + NUM_PLAYERS - 1) % NUM_PLAYERS;
+	return (id + GameSimulation::kNumPlayers - 1) % GameSimulation::kNumPlayers;
 }

@@ -2,7 +2,6 @@
 
 using namespace tictactoe;
 
-// TODO: These defines could/should probably be const variables instead (constexpr?)
 #define MARK_SIZE	5
 #define PAD_SIZE	1
 #define BORDER_SIZE	1
@@ -370,7 +369,7 @@ void FancyGame::DrawPlayerMarker(const ConsoleRect& markerRect, PlayerID playerI
 			assert(false);
 			break;
 	}
-	// TODO: static_assert(NUM_PLAYERS == 2);
+	static_assert(GameSimulation::kNumPlayers == 2, "FancyGame::DrawPlayerMarker() needs updating.");
 }
 
 void FancyGame::DrawPlayerMarkerWinBackground(const ConsoleRect& markerRect)
@@ -426,7 +425,7 @@ static const char* sGetPlayerName(PlayerID playerID)
 		case 1:		return "Player 2";
 		default:	return nullptr;
 	}
-	// TODO: static_assert(NUM_PLAYERS == 2);
+	static_assert(GameSimulation::kNumPlayers == 2, "sGetPlayerName() needs updating.");
 }
 
 static char sGetPlayerChar(PlayerID playerID)
@@ -437,7 +436,7 @@ static char sGetPlayerChar(PlayerID playerID)
 		case 1:		return 'O';
 		default:	return ' ';
 	}
-	// TODO: static_assert(NUM_PLAYERS == 2);
+	static_assert(GameSimulation::kNumPlayers == 2, "sGetPlayerChar() needs updating.");
 }
 
 static ConsoleColor sGetPlayerColor(PlayerID playerID)
@@ -448,5 +447,5 @@ static ConsoleColor sGetPlayerColor(PlayerID playerID)
 		case 1:		return ConsoleColor::LightBlue;
 		default:	return ConsoleColor::Black;
 	}
-	// TODO: static_assert(NUM_PLAYERS == 2);
+	static_assert(GameSimulation::kNumPlayers == 2, "sGetPlayerColor() needs updating.");
 }

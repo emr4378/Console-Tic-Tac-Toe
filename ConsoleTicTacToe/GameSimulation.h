@@ -16,6 +16,9 @@ namespace tictactoe
 	class GameSimulation
 	{
 	public:
+		static const uint16_t kNumPlayers = 2;
+
+	public:
 		GameSimulation(uint32_t m, uint32_t n, uint32_t k);
 		virtual ~GameSimulation();
 
