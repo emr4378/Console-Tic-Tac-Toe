@@ -11,12 +11,13 @@ static void sDestroyGameSimulation();
 static BOOL sConsoleCtrlHandler(DWORD dwCtrlType);
 
 static bool sTryParseUInt(const std::string& str, uint32_t* outValue);
+static void sPrintUsage();
 
 int main(int argc, char** argv)
 {
 	if (argc < 4 || argc > 5)
 	{
-		// TODO: printUsage()
+		sPrintUsage();
 		return EXIT_FAILURE;
 	}
 
@@ -28,7 +29,7 @@ int main(int argc, char** argv)
 		!sTryParseUInt(argv[2], &n) ||
 		!sTryParseUInt(argv[3], &k))
 	{
-		// TODO: printUsage()
+		sPrintUsage();
 		return EXIT_FAILURE;
 	}
 
@@ -42,7 +43,7 @@ int main(int argc, char** argv)
 		}
 		else
 		{
-			// TODO: printUsage()
+			sPrintUsage();
 			return EXIT_FAILURE;
 		}
 	}
@@ -111,4 +112,30 @@ static bool sTryParseUInt(const std::string& str, uint32_t* outValue)
 	}
 
 	return result;
+}
+
+static void sPrintUsage()
+{
+	printf("ConsoleTicTacToe - Created by Eduardo Rodrigues (edrodrigues.com)\n");
+
+	printf("\nA simple 2-player tic-tac-toe game for the Windows console.\n");
+
+	printf("\nusage: ConsoleTicTacToe <m> <n> <k> [-fancy]\n");
+
+	printf("\nInput Arguments:\n");
+	{
+		printf(" <m> = the number of columns in the game board (required, must be positive).\n");
+		printf(" <n> = the number of rows in the game board (required, must be positive).\n");
+		printf(" <k> = the number of marks a player must get in a row to win (required, must be positive).\n");
+		printf(" [-fancy] = a flag indicating the fancier 'graphical' UI should be used (optional).\n");
+	}
+
+	printf("\n[-fancy] Controls:\n");
+	{
+		printf(" Mouse = place a marker.\n");
+		printf(" Ctrl+Z = undo marker placement.\n");
+		printf(" Ctrl+Y = redo marker placement.\n");
+		printf(" Space = reset the game.\n");
+		printf(" ESC = quit the game.\n");
+	}
 }
