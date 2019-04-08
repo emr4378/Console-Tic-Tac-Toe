@@ -10,7 +10,9 @@ namespace tictactoe
 	{
 		Active,
 		Won,
-		Draw
+		Draw,
+
+		Count
 	};
 
 	class GameSimulation
