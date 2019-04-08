@@ -11,7 +11,7 @@ namespace tictactoe
 		FancyGame(uint32_t m, uint32_t n, uint32_t k);
 		virtual ~FancyGame();
 
-		virtual void Update() override;
+		virtual bool Update() override;
 		virtual void Reset() override;
 
 	private:
@@ -30,6 +30,7 @@ namespace tictactoe
 
 		bool _isGameAreaDirty;
 		bool _isInfoPanelDirty;
+		bool _isQuitRequested;
 
 		BoardPosition _currentMouseCell;
 		BoardPosition _prevMouseCell;

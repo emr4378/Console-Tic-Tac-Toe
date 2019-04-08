@@ -12,7 +12,7 @@ namespace tictactoe
 		GameSimulation(uint32_t m, uint32_t n, uint32_t k);
 		virtual ~GameSimulation();
 
-		virtual void Update() = 0;
+		virtual bool Update() = 0;
 		virtual void Reset();
 
 		MarkResult Mark(const BoardPosition& position);

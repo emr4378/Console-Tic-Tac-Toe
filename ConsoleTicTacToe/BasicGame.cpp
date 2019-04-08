@@ -17,9 +17,10 @@ BasicGame::~BasicGame()
 {
 }
 
-void BasicGame::Update()
+bool BasicGame::Update()
 {
 	assert(!"Not Implemented");
+	return false;
 
 	//GameBoard gameBoard(m, n, k);
 	//UndoManager<PlayerMove> moveHistory(

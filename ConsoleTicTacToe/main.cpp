@@ -51,8 +51,10 @@ int main(int argc, char** argv)
 	sCreateGameSimulation(m, n, k, isFancy);
 	while (sgGame != nullptr)
 	{
-		// TODO: Some sort of exit condition
-		sgGame->Update();
+		if (!sgGame->Update())
+		{
+			break;
+		}
 	}
 	sDestroyGameSimulation();
 

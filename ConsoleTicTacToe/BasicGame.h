@@ -29,6 +29,6 @@ namespace tictactoe
 		BasicGame(uint32_t m, uint32_t n, uint32_t k);
 		virtual ~BasicGame();
 
-		virtual void Update() override;
+		virtual bool Update() override;
 	};
 }

@@ -44,8 +44,13 @@ FancyGame::~FancyGame()
 {
 }
 
-void FancyGame::Update()
+bool FancyGame::Update()
 {
+	if (_isQuitRequested)
+	{
+		return false;
+	}
+
 	_consoleInterface.Update();
 
 	const PlayerID winningPlayerID = _gameBoard.GetWinningPlayerID();
@@ -198,6 +203,8 @@ void FancyGame::Update()
 
 	_prevMouseCell = _currentMouseCell;
 	_prevViewportRect = viewportRect;
+
+	return true;
 }
 
 void FancyGame::Reset()
@@ -227,7 +234,7 @@ void FancyGame::OnKeyEvent(const KEY_EVENT_RECORD& event)
 				break;
 
 			case VK_ESCAPE:
-				// TODO: Quit the game
+				_isQuitRequested = true;
 				break;
 
 			case VK_Y:
