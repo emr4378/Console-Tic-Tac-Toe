@@ -1,7 +1,5 @@
 #include "ConsoleInterface.h"
 
-#include "Common.h"
-
 #include <utility>
 #include <cassert>
 #include <cstdio>

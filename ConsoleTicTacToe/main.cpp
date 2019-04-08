@@ -8,7 +8,7 @@ static tictactoe::GameSimulation* sgGame = nullptr;
 static void sCreateGameSimulation(uint32_t m, uint32_t n, uint32_t k, bool isFancy);
 static void sDestroyGameSimulation();
 
-static BOOL sConsoleCtrlHandler(DWORD dwCtrlType);
+static BOOL WINAPI sConsoleCtrlHandler(DWORD dwCtrlType);
 
 static bool sTryParseUInt(const std::string& str, uint32_t* outValue);
 static void sPrintUsage();
@@ -66,7 +66,7 @@ static void sCreateGameSimulation(uint32_t m, uint32_t n, uint32_t k, bool isFan
 {
 	if (sgGame == nullptr)
 	{
-		SetConsoleCtrlHandler(sConsoleCtrlHandler, true);
+		SetConsoleCtrlHandler(sConsoleCtrlHandler, TRUE);
 		sgGame = isFancy ?
 			static_cast<tictactoe::GameSimulation*>(new tictactoe::FancyGame(m, n, k)) :
 			static_cast<tictactoe::GameSimulation*>(new tictactoe::BasicGame(m, n, k));
@@ -77,13 +77,13 @@ static void sDestroyGameSimulation()
 {
 	if (sgGame != nullptr)
 	{
-		SetConsoleCtrlHandler(sConsoleCtrlHandler, false);
+		SetConsoleCtrlHandler(sConsoleCtrlHandler, FALSE);
 		delete sgGame;
 		sgGame = nullptr;
 	}
 }
 
-static BOOL sConsoleCtrlHandler(DWORD dwCtrlType)
+static BOOL WINAPI sConsoleCtrlHandler(DWORD dwCtrlType)
 {
 	// This ensures everything is cleaned up regardless of how the game is closed.
 	// Primarily needed to ensure ConsoleInterface restores the initial console state.

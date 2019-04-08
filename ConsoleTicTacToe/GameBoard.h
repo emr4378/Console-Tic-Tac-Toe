@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Common.h"
-
 #include <vector>
 
 namespace tictactoe
 {
+	typedef uint16_t PlayerID;
+	static const PlayerID kInvalidPlayerID = -1;
+
 	enum class MarkResult
 	{
 		Success = 0,
@@ -23,6 +24,18 @@ namespace tictactoe
 		PositionNotMarkedByPlayer,
 
 		Count
+	};
+
+	struct BoardPosition
+	{
+		uint32_t x;
+		uint32_t y;
+	};
+
+	struct PlayerMove
+	{
+		PlayerID playerID;
+		BoardPosition position;
 	};
 
 	// Represents the 2-dimensional game board that a m,n,k-game is played on, where:

@@ -176,7 +176,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicGame.h" />
-    <ClInclude Include="Common.h" />
     <ClInclude Include="ConsoleInterface.h" />
     <ClInclude Include="FancyGame.h" />
     <ClInclude Include="GameBoard.h" />
