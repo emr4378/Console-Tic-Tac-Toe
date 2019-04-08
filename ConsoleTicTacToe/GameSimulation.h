@@ -17,6 +17,8 @@ namespace tictactoe
 	class GameSimulation
 	{
 	public:
+		typedef UndoManager<PlayerMove> MoveHistory;
+
 		static const uint16_t kNumPlayers = 2;
 
 	public:
@@ -26,8 +28,12 @@ namespace tictactoe
 		virtual bool Update() = 0;
 		virtual void Reset();
 
-		PlayerID GetActivePlayer() const { return _gameStatus == GameStatus::Active ? _activePlayer : kInvalidPlayerID; }
+		const GameBoard& GetGameBoard() const { return _gameBoard; }
+		const MoveHistory& GetMoveHistory() const { return _moveHistory; }
+
 		GameStatus GetGameStatus() const { return _gameStatus; }
+		PlayerID GetActivePlayer() const { return _gameStatus == GameStatus::Active ? _activePlayer : kInvalidPlayerID; }
+		PlayerID GetWinningPlayer() const { return _gameStatus == GameStatus::Won ? _gameBoard.GetWinningPlayer() : kInvalidPlayerID; }
 
 		MarkResult Mark(const BoardPosition& position);
 		bool Undo();
@@ -38,11 +44,9 @@ namespace tictactoe
 		virtual void ApplyUndo(const PlayerMove& move);
 		virtual void ApplyRedo(const PlayerMove& move);
 
-	protected:
-		GameBoard _gameBoard;
-
 	private:
-		UndoManager<PlayerMove> _moveHistory;
+		GameBoard _gameBoard;
+		MoveHistory _moveHistory;
 
 		PlayerID _activePlayer;
 		GameStatus _gameStatus;

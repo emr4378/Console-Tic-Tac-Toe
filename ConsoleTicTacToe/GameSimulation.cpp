@@ -54,7 +54,7 @@ bool GameSimulation::Redo()
 
 void GameSimulation::UpdateGameStatus()
 {
-	if (_gameBoard.GetWinningPlayerID() != kInvalidPlayerID)
+	if (_gameBoard.GetWinningPlayer() != kInvalidPlayerID)
 	{
 		_gameStatus = GameStatus::Won;
 	}

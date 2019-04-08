@@ -53,6 +53,7 @@ bool FancyGame::Update()
 
 	_consoleInterface.Update();
 
+	const GameBoard& gameBoard = GetGameBoard();
 	const ConsoleSize minBufferSize = _consoleInterface.GetMinBufferSize();
 	const uint16_t numColumns = minBufferSize.width / CELL_SIZE;
 	const uint16_t numRows = minBufferSize.height / CELL_SIZE;
@@ -76,15 +77,15 @@ bool FancyGame::Update()
 		if (GetGameStatus() == GameStatus::Active)
 		{
 			// Draw a temporary marker in the current mouse cell.
-			if (_gameBoard.IsValidPosition(_currentMouseCell) &&
-				_gameBoard.GetMarker(_currentMouseCell) == kInvalidPlayerID)
+			if (gameBoard.IsValidPosition(_currentMouseCell) &&
+				gameBoard.GetMarker(_currentMouseCell) == kInvalidPlayerID)
 			{
 				DrawPlayerMarker(sGetMarkerRect(_currentMouseCell.y, _currentMouseCell.x), GetActivePlayer(), ConsoleColor::DarkGray);
 			}
 
 			// Cleanup any temporary marker in the previous mouse cell.
-			if (_gameBoard.IsValidPosition(_prevMouseCell) &&
-				_gameBoard.GetMarker(_prevMouseCell) == kInvalidPlayerID)
+			if (gameBoard.IsValidPosition(_prevMouseCell) &&
+				gameBoard.GetMarker(_prevMouseCell) == kInvalidPlayerID)
 			{
 				DrawPlayerMarker(sGetMarkerRect(_prevMouseCell.y, _prevMouseCell.x), GetActivePlayer(), ConsoleColor::Black);
 			}
@@ -100,7 +101,7 @@ bool FancyGame::Update()
 		// If a player has won, highlight the backgrounds of the winning cells.
 		if (GetGameStatus() == GameStatus::Won)
 		{
-			const auto& positionList = _gameBoard.GetWinPositionList();
+			const auto& positionList = gameBoard.GetWinPositionList();
 			for (auto iter = positionList.begin(); iter != positionList.end(); iter++)
 			{
 				ConsoleRect markerRect = sGetMarkerRect(iter->y, iter->x);
@@ -108,7 +109,7 @@ bool FancyGame::Update()
 			}
 		}
 
-		// Draw the current state of every cell in the gameboard and its borders.
+		// Draw the current state of every cell in the game board and its borders.
 		for (uint16_t r = 0; r < numRows; r++)
 		{
 			for (uint16_t c = 0; c < numColumns; c++)
@@ -127,7 +128,7 @@ bool FancyGame::Update()
 					}
 
 					ConsoleRect markerRect = sGetMarkerRect(r, c);
-					DrawPlayerMarker(markerRect, _gameBoard.GetMarker({ c, r }));
+					DrawPlayerMarker(markerRect, gameBoard.GetMarker({ c, r }));
 				}
 			}
 		}
@@ -157,7 +158,7 @@ bool FancyGame::Update()
 			bufferCharCount = sprintf_s(
 				buffer,
 				"Goal: %u-in-a-row",
-				_gameBoard.GetWinCondition());
+				gameBoard.GetWinCondition());
 			_consoleInterface.DrawString(
 				buffer,
 				viewportRect.left,
@@ -196,7 +197,7 @@ bool FancyGame::Update()
 			ConsoleColor background;
 			if (GetGameStatus() == GameStatus::Won)
 			{
-				auto winningPlayerID = _gameBoard.GetWinningPlayerID();
+				auto winningPlayerID = gameBoard.GetWinningPlayer();
 				bufferCharCount = sprintf_s(
 					buffer,
 					"-- %s (%c) wins! --",
@@ -314,10 +315,6 @@ void FancyGame::OnMouseEvent(const MOUSE_EVENT_RECORD& event)
 			{
 				_isGameAreaDirty = true;
 				_isInfoPanelDirty = true;
-			}
-			else
-			{
-				// TODO: Some sort of error handling
 			}
 		}
 	}

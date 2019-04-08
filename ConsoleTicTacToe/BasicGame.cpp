@@ -33,8 +33,6 @@ void BasicGame::Reset()
 
 bool BasicGame::Update()
 {
-	// TODO: Something with win/game over detection (GetGameStatus)
-
 	ExecuteStatusCommand();
 
 	bool isTurnOver = false;
@@ -207,30 +205,34 @@ bool BasicGame::ExecuteHelpCommand()
 
 bool BasicGame::ExecuteStatusCommand()
 {
-	std::cout << std::endl << _gameBoard;
-	switch (GetGameStatus())
+	std::cout << std::endl;
 	{
-		case GameStatus::Active:
-			std::cout
-				<< sGetPlayerName(GetActivePlayer())
-				<< " (" << sGetPlayerChar(GetActivePlayer()) << ")"
-				<< "'s turn."
-				<< std::endl;
-			break;
+		std::cout << GetGameBoard();
 
-		case GameStatus::Won:
-			std::cout
-				<< sGetPlayerName(_gameBoard.GetWinningPlayerID())
-				<< " (" << sGetPlayerChar(_gameBoard.GetWinningPlayerID()) << ")"
-				<< " wins!"
-				<< std::endl;
-			break;
+		switch (GetGameStatus())
+		{
+			case GameStatus::Active:
+				std::cout
+					<< sGetPlayerName(GetActivePlayer())
+					<< " (" << sGetPlayerChar(GetActivePlayer()) << ")"
+					<< "'s turn."
+					<< std::endl;
+				break;
 
-		case GameStatus::Draw:
-			std::cout << "Draw - no player wins." << std::endl;
-			break;
+			case GameStatus::Won:
+				std::cout
+					<< sGetPlayerName(GetWinningPlayer())
+					<< " (" << sGetPlayerChar(GetWinningPlayer()) << ")"
+					<< " wins!"
+					<< std::endl;
+				break;
+
+			case GameStatus::Draw:
+				std::cout << "Draw - no player wins." << std::endl;
+				break;
+		}
+		static_assert(static_cast<int>(GameStatus::Count) == 3, "BasicGame::ExecuteStatusCommand() needs updating.");
 	}
-	static_assert(static_cast<int>(GameStatus::Count) == 3, "BasicGame::ExecuteStatusCommand() needs updating.");
 	std::cout << std::endl;
 
 	return true;
