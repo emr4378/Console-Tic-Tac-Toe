@@ -23,8 +23,6 @@ GameBoard::GameBoard(uint16_t columns, uint16_t rows, uint16_t winCondition) :
 	_winningPlayerID(kInvalidPlayerID),
 	_winningPositions()
 {
-	assert(_winCondition > 1);
-
 	_grid = new PlayerID*[_rows];
 	for (uint16_t row = 0; row < _rows; row++)
 	{

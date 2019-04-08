@@ -1,8 +1,8 @@
 #include "ConsoleInterface.h"
 
-#include <utility>
 #include <cassert>
 #include <cstdio>
+#include <utility>
 
 using namespace tictactoe;
 

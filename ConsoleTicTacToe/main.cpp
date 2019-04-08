@@ -1,6 +1,7 @@
 #include "BasicGame.h"
 #include "FancyGame.h"
 
+#include <iomanip>
 #include <iostream>
 #include <string>
 
@@ -10,7 +11,7 @@ static void sDestroyGameSimulation();
 
 static BOOL WINAPI sConsoleCtrlHandler(DWORD dwCtrlType);
 
-static bool sTryParseUInt(const std::string& str, uint16_t* outValue);
+static bool sTryParseUInt(const std::string& str, uint16_t minValue, uint16_t* outValue);
 static void sPrintUsage();
 
 int main(int argc, char** argv)
@@ -25,9 +26,9 @@ int main(int argc, char** argv)
 	uint16_t m;
 	uint16_t n;
 	uint16_t k;
-	if (!sTryParseUInt(argv[1], &m) ||
-		!sTryParseUInt(argv[2], &n) ||
-		!sTryParseUInt(argv[3], &k))
+	if (!sTryParseUInt(argv[1], 3, &m) ||
+		!sTryParseUInt(argv[2], 3, &n) ||
+		!sTryParseUInt(argv[3], 3, &k))
 	{
 		sPrintUsage();
 		return EXIT_FAILURE;
@@ -91,7 +92,7 @@ static BOOL WINAPI sConsoleCtrlHandler(DWORD dwCtrlType)
 	return false;
 }
 
-static bool sTryParseUInt(const std::string& str, uint16_t* outValue)
+static bool sTryParseUInt(const std::string& str, uint16_t minValue, uint16_t* outValue)
 {
 	bool result = false;
 	*outValue = 0;
@@ -100,7 +101,7 @@ static bool sTryParseUInt(const std::string& str, uint16_t* outValue)
 	{
 		size_t pos;
 		auto value = std::stoul(str, &pos);
-		if (value < UINT16_MAX && pos == str.length())
+		if (value >= minValue && value <= UINT16_MAX && pos == str.length())
 		{
 			*outValue = static_cast<uint16_t>(value);
 			result = true;
@@ -116,26 +117,34 @@ static bool sTryParseUInt(const std::string& str, uint16_t* outValue)
 
 static void sPrintUsage()
 {
-	printf("ConsoleTicTacToe - Created by Eduardo Rodrigues (edrodrigues.com)\n");
+	std::cout << "ConsoleTicTacToe - Created by Eduardo Rodrigues (edrodrigues.com)" << std::endl;
+	std::cout << std::endl;
+	std::cout << "A simple 2-player tic-tac-toe game for the Windows console." << std::endl;
+	std::cout << std::endl;
+	std::cout << "usage: ConsoleTicTacToe m n k [-fancy]" << std::endl;
 
-	printf("\nA simple 2-player tic-tac-toe game for the Windows console.\n");
-
-	printf("\nusage: ConsoleTicTacToe <m> <n> <k> [-fancy]\n");
-
-	printf("\nInput Arguments:\n");
+	auto printSubItem = [](const char* itemName, const char* itemDesc)
 	{
-		printf(" <m> = the number of columns in the game board (required, must be positive).\n");
-		printf(" <n> = the number of rows in the game board (required, must be positive).\n");
-		printf(" <k> = the number of marks a player must get in a row to win (required, must be positive).\n");
-		printf(" [-fancy] = a flag indicating the fancier 'graphical' UI should be used (optional).\n");
-	}
+		std::cout << "  " << std::left << std::setw(16) << itemName << itemDesc << std::endl;
+	};
 
-	printf("\n[-fancy] Controls:\n");
+	std::cout << "Input Arguments:" << std::endl;
 	{
-		printf(" Mouse = place a marker.\n");
-		printf(" Ctrl+Z = undo marker placement.\n");
-		printf(" Ctrl+Y = redo marker placement.\n");
-		printf(" Space = reset the game.\n");
-		printf(" ESC = quit the game.\n");
+		printSubItem("m", "(m >= 3) The number of columns in the game board.");
+		printSubItem("n", "(n >= 3) The number of rows in the game board.");
+		printSubItem("k", "(k >= 3) The number of marks a player must get in a row to win.");
+		printSubItem("[-fancy]", "(Optional) Indicates the fancier 'graphical' UI should be used.");
 	}
+	std::cout << std::endl;
+
+	std::cout << "Fancy-mode Controls:" << std::endl;
+	{
+		printSubItem("Mouse Move", "Change the currently selected cell.");
+		printSubItem("Mouse Click", "Places a marker at the selected cell and ends the current turn.");
+		printSubItem("Ctrl+Z", "Moves back a turn, reverting a marker placement.");
+		printSubItem("Ctrl+Y", "Moves forward a turn, re-placing a reverted marker placement.");
+		printSubItem("Space", "Clears the current game board and restarts the game.");
+		printSubItem("ESC", "Ends the game and exits this console application.");
+	}
+	std::cout << std::endl;
 }
