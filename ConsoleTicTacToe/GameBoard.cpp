@@ -27,6 +27,10 @@ void GameBoard::Initialize(uint32_t columns, uint32_t rows, uint32_t winConditio
 {
 	if (!_isInitialized)
 	{
+		_columns = columns;
+		_rows = rows;
+		_winCondition = winCondition;
+
 		_grid = new PlayerID*[_rows];
 		for (uint32_t row = 0; row < _rows; row++)
 		{
@@ -55,6 +59,9 @@ void GameBoard::Terminate()
 			_grid = nullptr;
 		}
 
+		_columns = 0;
+		_rows = 0;
+		_winCondition = 0;
 		_isInitialized = false;
 	}
 }

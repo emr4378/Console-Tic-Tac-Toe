@@ -29,6 +29,12 @@ namespace tictactoe
 		White =			LightGray | DarkGray
 	};
 
+	struct ConsoleCoord
+	{
+		uint16_t x;
+		uint16_t y;
+	};
+
 	struct ConsoleSize
 	{
 		uint16_t width;

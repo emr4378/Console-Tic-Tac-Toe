@@ -167,14 +167,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BasicGame.cpp" />
     <ClCompile Include="ConsoleInterface.cpp" />
+    <ClCompile Include="FancyGame.cpp" />
     <ClCompile Include="GameBoard.cpp" />
+    <ClCompile Include="GameSimulation.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BasicGame.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="ConsoleInterface.h" />
+    <ClInclude Include="FancyGame.h" />
     <ClInclude Include="GameBoard.h" />
+    <ClInclude Include="GameSimulation.h" />
     <ClInclude Include="UndoManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
