@@ -54,8 +54,14 @@ ConsoleInterface::ConsoleInterface() :
 	bool result = SetCurrentConsoleFontEx(_stdOutHandle, false, &fontInfo);
 	assert(result);
 
-	// Change STDIN console mode to allow mouse input.
+	// Change console mode to allow mouse input.
 	result = SetConsoleMode(_stdInHandle, ENABLE_EXTENDED_FLAGS | ENABLE_PROCESSED_INPUT | ENABLE_MOUSE_INPUT);
+	assert(result);
+
+	// Change console cusor info to hide the blinking cursor.
+	CONSOLE_CURSOR_INFO cursorInfo = _cachedInfo.stdOutCursorInfo;
+	cursorInfo.bVisible = false;
+	result = SetConsoleCursorInfo(_stdOutHandle, &cursorInfo);
 	assert(result);
 
 	_currentBufferSize = sCoordToConsoleSize(_cachedInfo.stdOutScreenBufferInfo.dwSize);
@@ -76,12 +82,19 @@ void ConsoleInterface::SaveInitialConsoleState()
 
 	// Cache the initial console state to be restored in the destructor.
 	{
+		// IN - Console mode
 		result = GetConsoleMode(_stdInHandle, &_cachedInfo.stdInMode);
 		assert(result);
 
+		// OUT - Cursor info
+		result = GetConsoleCursorInfo(_stdOutHandle, &_cachedInfo.stdOutCursorInfo);
+		assert(result);
+
+		// OUT - Screen buffer info
 		result = GetConsoleScreenBufferInfo(_stdOutHandle, &_cachedInfo.stdOutScreenBufferInfo);
 		assert(result);
 
+		// OUT - Font info
 		_cachedInfo.stdOutFontInfo.cbSize = sizeof(_cachedInfo.stdOutFontInfo);
 		result = GetCurrentConsoleFontEx(_stdOutHandle, false, &_cachedInfo.stdOutFontInfo);
 		assert(result);
@@ -90,25 +103,36 @@ void ConsoleInterface::SaveInitialConsoleState()
 
 void ConsoleInterface::RestoreInitialConsoleState()
 {
-	bool result = SetConsoleMode(_stdInHandle, _cachedInfo.stdInMode);
-	assert(result);
+	bool result;
 
-	result = SetConsoleTextAttribute(_stdOutHandle, _cachedInfo.stdOutScreenBufferInfo.wAttributes);
-	assert(result);
-
-	// HACK: To avoid issues with screen buffer <-> window size dependencies, set the window size to the smallest
-	// possible value before setting it back to the original size (see https://stackoverflow.com/a/40634467).
-	SMALL_RECT minWindowRect = { 0, 0, 1, 1 };
-	result = SetConsoleWindowInfo(_stdOutHandle, true, &minWindowRect);
-	assert(result);
-
-	result = SetConsoleScreenBufferSize(_stdOutHandle, _cachedInfo.stdOutScreenBufferInfo.dwSize);
-	assert(result);
-
-	result = SetConsoleWindowInfo(_stdOutHandle, true, &_cachedInfo.stdOutScreenBufferInfo.srWindow);
-	assert(result);
-
+	// OUT - Font info
 	result = SetCurrentConsoleFontEx(_stdOutHandle, false, &_cachedInfo.stdOutFontInfo);
+	assert(result);
+
+	// OUT - Screen buffer info
+	{
+		result = SetConsoleTextAttribute(_stdOutHandle, _cachedInfo.stdOutScreenBufferInfo.wAttributes);
+		assert(result);
+
+		// HACK: To avoid issues with screen buffer <-> window size dependencies, set the window size to the smallest
+		// possible value before setting it back to the original size (see https://stackoverflow.com/a/40634467).
+		SMALL_RECT minWindowRect = { 0, 0, 1, 1 };
+		result = SetConsoleWindowInfo(_stdOutHandle, true, &minWindowRect);
+		assert(result);
+
+		result = SetConsoleScreenBufferSize(_stdOutHandle, _cachedInfo.stdOutScreenBufferInfo.dwSize);
+		assert(result);
+
+		result = SetConsoleWindowInfo(_stdOutHandle, true, &_cachedInfo.stdOutScreenBufferInfo.srWindow);
+		assert(result);
+	}
+
+	// OUT - Cursor info
+	result = SetConsoleCursorInfo(_stdOutHandle, &_cachedInfo.stdOutCursorInfo);
+	assert(result);
+
+	// IN - Console mode
+	result = SetConsoleMode(_stdInHandle, _cachedInfo.stdInMode);
 	assert(result);
 }
 

@@ -91,6 +91,7 @@ namespace tictactoe
 
 			CONSOLE_SCREEN_BUFFER_INFO stdOutScreenBufferInfo;
 			CONSOLE_FONT_INFOEX stdOutFontInfo;
+			CONSOLE_CURSOR_INFO stdOutCursorInfo;
 		};
 		void SaveInitialConsoleState();
 		void RestoreInitialConsoleState();
