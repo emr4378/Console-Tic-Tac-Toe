@@ -21,6 +21,9 @@ namespace tictactoe
 
 		static const uint16_t kNumPlayers = 2;
 
+		static const char* GetPlayerName(PlayerID playerID);
+		static char GetPlayerChar(PlayerID playerID);
+
 	public:
 		GameSimulation(uint16_t m, uint16_t n, uint16_t k);
 		virtual ~GameSimulation();

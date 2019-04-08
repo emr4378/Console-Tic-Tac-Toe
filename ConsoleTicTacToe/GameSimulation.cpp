@@ -5,6 +5,28 @@ using namespace tictactoe;
 static PlayerID sGetNextPlayerID(PlayerID id);
 static PlayerID sGetPrevPlayerID(PlayerID id);
 
+const char* GameSimulation::GetPlayerName(PlayerID playerID)
+{
+	switch (playerID)
+	{
+		case 0:		return "Player 1";
+		case 1:		return "Player 2";
+		default:	return nullptr;
+	}
+	static_assert(GameSimulation::kNumPlayers == 2, "GetPlayerName() needs updating.");
+}
+
+char GameSimulation::GetPlayerChar(PlayerID playerID)
+{
+	switch (playerID)
+	{
+		case 0:		return 'X';
+		case 1:		return 'O';
+		default:	return ' ';
+	}
+	static_assert(GameSimulation::kNumPlayers == 2, "GetPlayerChar() needs updating.");
+}
+
 GameSimulation::GameSimulation(uint16_t m, uint16_t n, uint16_t k) :
 	_gameBoard(m, n, k),
 	_moveHistory(),

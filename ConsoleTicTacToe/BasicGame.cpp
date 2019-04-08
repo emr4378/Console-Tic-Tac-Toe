@@ -6,12 +6,7 @@
 
 using namespace tictactoe;
 
-// TODO: Consolidate duplicate functions
-static const char* sGetPlayerName(PlayerID playerID);
-static char sGetPlayerChar(PlayerID playerID);
-
 static bool sTryParseUInt(const std::string& str, uint16_t* outValue);
-
 std::ostream& operator<<(std::ostream& os, const BoardPosition& position);
 std::ostream& operator<<(std::ostream& os, const GameBoard& gameBoard);
 
@@ -41,8 +36,8 @@ bool BasicGame::Update()
 		if (GetGameStatus() == GameStatus::Active)
 		{
 			std::cout
-				<< "[" << sGetPlayerName(GetActivePlayer())
-				<< " (" << sGetPlayerChar(GetActivePlayer()) << ")"
+				<< "[" << GetPlayerName(GetActivePlayer())
+				<< " (" << GetPlayerChar(GetActivePlayer()) << ")"
 				<< "] ";
 		}
 		std::cout << "Enter a command: ";
@@ -96,7 +91,7 @@ void BasicGame::ApplyUndo(const PlayerMove& move)
 	GameSimulation::ApplyUndo(move);
 	std::cout
 		<< "Marker '"
-		<< sGetPlayerChar(move.playerID)
+		<< GetPlayerChar(move.playerID)
 		<< "' has been removed from "
 		<< move.position
 		<< "."
@@ -108,7 +103,7 @@ void BasicGame::ApplyRedo(const PlayerMove& move)
 	GameSimulation::ApplyRedo(move);
 	std::cout
 		<< "Marker '"
-		<< sGetPlayerChar(move.playerID)
+		<< GetPlayerChar(move.playerID)
 		<< "' has been re-placed at "
 		<< move.position
 		<< "."
@@ -217,16 +212,16 @@ bool BasicGame::ExecuteStatusCommand()
 		{
 			case GameStatus::Active:
 				std::cout
-					<< sGetPlayerName(GetActivePlayer())
-					<< " (" << sGetPlayerChar(GetActivePlayer()) << ")"
+					<< GetPlayerName(GetActivePlayer())
+					<< " (" << GetPlayerChar(GetActivePlayer()) << ")"
 					<< "'s turn."
 					<< std::endl;
 				break;
 
 			case GameStatus::Won:
 				std::cout
-					<< sGetPlayerName(GetWinningPlayer())
-					<< " (" << sGetPlayerChar(GetWinningPlayer()) << ")"
+					<< GetPlayerName(GetWinningPlayer())
+					<< " (" << GetPlayerChar(GetWinningPlayer()) << ")"
 					<< " wins!"
 					<< std::endl;
 				break;
@@ -253,28 +248,6 @@ bool BasicGame::ExecuteQuitCommand()
 {
 	_isQuitRequested = true;
 	return true;
-}
-
-static const char* sGetPlayerName(PlayerID playerID)
-{
-	switch (playerID)
-	{
-		case 0:		return "Player 1";
-		case 1:		return "Player 2";
-		default:	return nullptr;
-	}
-	static_assert(GameSimulation::kNumPlayers == 2, "sGetPlayerName() needs updating.");
-}
-
-static char sGetPlayerChar(PlayerID playerID)
-{
-	switch (playerID)
-	{
-		case 0:		return 'X';
-		case 1:		return 'O';
-		default:	return ' ';
-	}
-	static_assert(GameSimulation::kNumPlayers == 2, "sGetPlayerChar() needs updating.");
 }
 
 static bool sTryParseUInt(const std::string& str, uint16_t* outValue)
@@ -317,7 +290,7 @@ std::ostream& operator<<(std::ostream& os, const GameBoard& gameBoard)
 	{
 		for (uint16_t column = 0; column < gameBoard.GetColumns(); column++)
 		{
-			os << sGetPlayerChar(gameBoard.GetMarker({ column, row }));
+			os << BasicGame::GetPlayerChar(gameBoard.GetMarker({ column, row }));
 
 			if (column < gameBoard.GetColumns() - 1)
 			{

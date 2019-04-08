@@ -17,9 +17,16 @@ static ConsoleRect sGetBorderRect(uint16_t r, uint16_t c);
 static ConsoleRect sGetMarkerRect(uint16_t r, uint16_t c);
 static bool sConsoleRectIntersect(const ConsoleRect& a, const ConsoleRect& b);
 
-static const char* sGetPlayerName(PlayerID playerID);
-static char sGetPlayerChar(PlayerID playerID);
-static ConsoleColor sGetPlayerColor(PlayerID playerID);
+ConsoleColor FancyGame::GetPlayerColor(PlayerID playerID)
+{
+	switch (playerID)
+	{
+		case 0:		return ConsoleColor::LightRed;
+		case 1:		return ConsoleColor::LightBlue;
+		default:	return ConsoleColor::Black;
+	}
+	static_assert(GameSimulation::kNumPlayers == 2, "GetPlayerColor() needs updating.");
+}
 
 FancyGame::FancyGame(uint16_t m, uint16_t n, uint16_t k) :
 	GameSimulation(m, n, k),
@@ -203,9 +210,9 @@ bool FancyGame::Update()
 				bufferCharCount = sprintf_s(
 					buffer,
 					"-- %s (%c) wins! --",
-					sGetPlayerName(winningPlayerID),
-					sGetPlayerChar(winningPlayerID));
-				foreground = sGetPlayerColor(winningPlayerID);
+					GetPlayerName(winningPlayerID),
+					GetPlayerChar(winningPlayerID));
+				foreground = GetPlayerColor(winningPlayerID);
 				background = ConsoleColor::DarkGray;
 			}
 			else if (GetGameStatus() == GameStatus::Draw)
@@ -219,8 +226,8 @@ bool FancyGame::Update()
 				bufferCharCount = sprintf_s(
 					buffer,
 					"%s's turn (%c)",
-					sGetPlayerName(GetActivePlayer()),
-					sGetPlayerChar(GetActivePlayer()));
+					GetPlayerName(GetActivePlayer()),
+					GetPlayerChar(GetActivePlayer()));
 				foreground = ConsoleColor::Black;
 				background = ConsoleColor::White;
 			}
@@ -357,7 +364,7 @@ void FancyGame::DrawCellBorderBottomSide(const ConsoleRect& borderRect)
 
 void FancyGame::DrawPlayerMarker(const ConsoleRect& markerRect, PlayerID playerID)
 {
-	DrawPlayerMarker(markerRect, playerID, sGetPlayerColor(playerID));
+	DrawPlayerMarker(markerRect, playerID, GetPlayerColor(playerID));
 }
 
 void FancyGame::DrawPlayerMarker(const ConsoleRect& markerRect, PlayerID playerID, ConsoleColor color)
@@ -438,37 +445,4 @@ static bool sConsoleRectIntersect(const ConsoleRect& a, const ConsoleRect& b)
 		b.right < a.left ||
 		b.top > a.bottom ||
 		b.bottom < a.top);
-}
-
-static const char* sGetPlayerName(PlayerID playerID)
-{
-	switch (playerID)
-	{
-		case 0:		return "Player 1";
-		case 1:		return "Player 2";
-		default:	return nullptr;
-	}
-	static_assert(GameSimulation::kNumPlayers == 2, "sGetPlayerName() needs updating.");
-}
-
-static char sGetPlayerChar(PlayerID playerID)
-{
-	switch (playerID)
-	{
-		case 0:		return 'X';
-		case 1:		return 'O';
-		default:	return ' ';
-	}
-	static_assert(GameSimulation::kNumPlayers == 2, "sGetPlayerChar() needs updating.");
-}
-
-static ConsoleColor sGetPlayerColor(PlayerID playerID)
-{
-	switch (playerID)
-	{
-		case 0:		return ConsoleColor::LightRed;
-		case 1:		return ConsoleColor::LightBlue;
-		default:	return ConsoleColor::Black;
-	}
-	static_assert(GameSimulation::kNumPlayers == 2, "sGetPlayerColor() needs updating.");
 }

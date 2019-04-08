@@ -8,6 +8,9 @@ namespace tictactoe
 	class FancyGame : public GameSimulation
 	{
 	public:
+		static ConsoleColor GetPlayerColor(PlayerID playerID);
+
+	public:
 		FancyGame(uint16_t m, uint16_t n, uint16_t k);
 		virtual ~FancyGame();
 
