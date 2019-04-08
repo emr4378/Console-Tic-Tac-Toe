@@ -139,59 +139,61 @@ bool FancyGame::Update()
 	// Draw the info panel.
 	if (_isInfoPanelDirty)
 	{
+		static_assert(INFO_AREA_SIZE == 3, "Info panel size is assumed to be 3");
+
 		const ConsoleSize viewportSize = viewportRect.GetSize();
 		uint16_t minWidth = min(minBufferSize.width, viewportSize.width + 1);
-
-		for (uint16_t r = 0; r < INFO_AREA_SIZE - 1; r++)
-		{
-			_consoleInterface.DrawLine(
-				viewportRect.left, viewportRect.top + r,
-				viewportRect.left + minWidth, viewportRect.top + r,
-				ConsoleColor::White);
-		}
 
 		char buffer[32];
 		int16_t bufferCharCount;
 
-		// Print the general game information
+		// Print the top line.
 		{
-			bufferCharCount = sprintf_s(
-				buffer,
-				"Goal: %u-in-a-row",
-				gameBoard.GetWinCondition());
-			_consoleInterface.DrawString(
-				buffer,
-				viewportRect.left,
-				viewportRect.top,
-				ConsoleColor::Black,
+			_consoleInterface.DrawLine(
+				viewportRect.left, viewportRect.top,
+				viewportRect.left + minWidth, viewportRect.top,
 				ConsoleColor::White);
-		}
 
-		// Print the current mouse cell information.
-		{
-			if (_currentMouseCell.x < numColumns &&
-				_currentMouseCell.y < numRows)
+			// Print the general game information.
 			{
 				bufferCharCount = sprintf_s(
 					buffer,
-					"(%u, %u)",
-					_currentMouseCell.x,
-					_currentMouseCell.y);
-			}
-			else
-			{
-				bufferCharCount = sprintf_s(buffer, "(-, -)");
+					"%u-in-a-row",
+					gameBoard.GetWinCondition());
+				_consoleInterface.DrawString(
+					buffer,
+					viewportRect.left,
+					viewportRect.top,
+					ConsoleColor::Black,
+					ConsoleColor::White);
 			}
 
-			_consoleInterface.DrawString(
-				buffer,
-				viewportRect.left + minWidth - bufferCharCount,
-				viewportRect.top,
-				ConsoleColor::Black,
-				ConsoleColor::White);
+			// Print the current mouse cell information.
+			{
+				if (_currentMouseCell.x < numColumns &&
+					_currentMouseCell.y < numRows)
+				{
+					bufferCharCount = sprintf_s(
+						buffer,
+						"(%u, %u)",
+						_currentMouseCell.x,
+						_currentMouseCell.y);
+				}
+				else
+				{
+					bufferCharCount = sprintf_s(buffer, "(-, -)");
+				}
+
+				_consoleInterface.DrawString(
+					buffer,
+					viewportRect.left + minWidth - bufferCharCount + 1,
+					viewportRect.top,
+					ConsoleColor::Black,
+					ConsoleColor::White);
+			}
 		}
 
-		// Print the current turn information.
+		// Print the current turn information (second line).
 		{
 			ConsoleColor foreground;
 			ConsoleColor background;
@@ -222,6 +224,11 @@ bool FancyGame::Update()
 				foreground = ConsoleColor::Black;
 				background = ConsoleColor::White;
 			}
+
+			_consoleInterface.DrawLine(
+				viewportRect.left, viewportRect.top + 1,
+				viewportRect.left + minWidth, viewportRect.top + 1,
+				background);
 
 			_consoleInterface.DrawString(
 				buffer,
