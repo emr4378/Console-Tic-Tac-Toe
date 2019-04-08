@@ -20,8 +20,8 @@ namespace tictactoe
 		void SetCallbacks(ApplyFunc applyUndoFunc, ApplyFunc applyRedoFunc);
 
 		void Add(const T& move);
-		void Undo();
-		void Redo();
+		bool Undo();
+		bool Redo();
 		void Clear();
 
 		uint32_t GetAvailableUndosCount() const;
@@ -61,23 +61,29 @@ namespace tictactoe
 	}
 
 	template <typename T>
-	void UndoManager<T>::Undo()
+	bool UndoManager<T>::Undo()
 	{
+		bool result = false;
 		if (_undoPosition != _moveList.begin())
 		{
 			_undoPosition--;
 			_applyUndoFunc(*_undoPosition);
+			result = true;
 		}
+		return result;
 	}
 
 	template <typename T>
-	void UndoManager<T>::Redo()
+	bool UndoManager<T>::Redo()
 	{
+		bool result = false;
 		if (_undoPosition != _moveList.end())
 		{
 			_applyRedoFunc(*_undoPosition);
 			_undoPosition++;
+			result = true;
 		}
+		return result;
 	}
 
 	template <typename T>

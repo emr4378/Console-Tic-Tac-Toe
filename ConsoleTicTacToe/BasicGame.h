@@ -13,6 +13,10 @@ namespace tictactoe
 		virtual bool Update() override;
 		virtual void Reset() override;
 
+	protected:
+		virtual void ApplyUndo(const PlayerMove& move) override;
+		virtual void ApplyRedo(const PlayerMove& move) override;
+
 	private:
 		bool ExecuteMarkCommand(std::string params);
 		bool ExecuteUndoCommand();

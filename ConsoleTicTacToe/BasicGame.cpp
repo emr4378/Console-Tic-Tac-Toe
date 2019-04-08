@@ -92,6 +92,30 @@ bool BasicGame::Update()
 	return (_isQuitRequested == false);
 }
 
+void BasicGame::ApplyUndo(const PlayerMove& move)
+{
+	GameSimulation::ApplyUndo(move);
+	std::cout
+		<< "Marker '"
+		<< sGetPlayerChar(move.playerID)
+		<< "' has been removed from "
+		<< move.position
+		<< "."
+		<< std::endl;
+}
+
+void BasicGame::ApplyRedo(const PlayerMove& move)
+{
+	GameSimulation::ApplyRedo(move);
+	std::cout
+		<< "Marker '"
+		<< sGetPlayerChar(move.playerID)
+		<< "' has been re-placed at "
+		<< move.position
+		<< "."
+		<< std::endl;
+}
+
 bool BasicGame::ExecuteMarkCommand(std::string params)
 {
 	bool result = false;
@@ -143,17 +167,19 @@ bool BasicGame::ExecuteMarkCommand(std::string params)
 
 bool BasicGame::ExecuteUndoCommand()
 {
-	// TODO: Undo should return success, print something out depending on that return.
-	Undo();
-	// std::cerr << "Unable to undo any further." << std::endl;
+	if (!Undo())
+	{
+		std::cerr << "Error: Unable to perform undo." << std::endl;
+	}
 	return true;
 }
 
 bool BasicGame::ExecuteRedoCommand()
 {
-	// TODO: Redo should return success, print something out depending on that return.
-	Redo();
-	// std::cerr << "Unable to redo any further." << std::endl;
+	if (!Redo())
+	{
+		std::cerr << "Error: Unable to perform redo." << std::endl;
+	}
 	return true;
 }
 
@@ -270,7 +296,7 @@ static bool sTryParseUInt(const std::string& str, uint32_t* outValue)
 
 std::ostream& operator<<(std::ostream& os, const BoardPosition& position)
 {
-	os << "Position (" << position.x << ", " << position.y << ")";
+	os << "(" << position.x << ", " << position.y << ")";
 	return os;
 }
 

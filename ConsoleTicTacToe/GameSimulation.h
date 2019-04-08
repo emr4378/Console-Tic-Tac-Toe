@@ -30,13 +30,13 @@ namespace tictactoe
 		GameStatus GetGameStatus() const { return _gameStatus; }
 
 		MarkResult Mark(const BoardPosition& position);
-		void Undo();
-		void Redo();
+		bool Undo();
+		bool Redo();
 
 	protected:
 		void UpdateGameStatus();
-		void OnUndo(const PlayerMove& move);
-		void OnRedo(const PlayerMove& move);
+		virtual void ApplyUndo(const PlayerMove& move);
+		virtual void ApplyRedo(const PlayerMove& move);
 
 	protected:
 		GameBoard _gameBoard;

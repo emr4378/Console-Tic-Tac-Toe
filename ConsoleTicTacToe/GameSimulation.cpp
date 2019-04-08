@@ -12,8 +12,8 @@ GameSimulation::GameSimulation(uint32_t m, uint32_t n, uint32_t k) :
 	_gameStatus(GameStatus::Active)
 {
 	_moveHistory.SetCallbacks(
-		[=](const PlayerMove& move) { this->OnUndo(move); },
-		[=](const PlayerMove& move) { this->OnRedo(move); });
+		[=](const PlayerMove& move) { this->ApplyUndo(move); },
+		[=](const PlayerMove& move) { this->ApplyRedo(move); });
 }
 
 GameSimulation::~GameSimulation()
@@ -41,15 +41,15 @@ MarkResult GameSimulation::Mark(const BoardPosition& position)
 	return result;
 }
 
-void GameSimulation::Undo()
+bool GameSimulation::Undo()
 {
-	_moveHistory.Undo();
+	return _moveHistory.Undo();
 	
 }
 
-void GameSimulation::Redo()
+bool GameSimulation::Redo()
 {
-	_moveHistory.Redo();
+	return _moveHistory.Redo();
 }
 
 void GameSimulation::UpdateGameStatus()
@@ -68,7 +68,7 @@ void GameSimulation::UpdateGameStatus()
 	}
 }
 
-void GameSimulation::OnUndo(const PlayerMove& move)
+void GameSimulation::ApplyUndo(const PlayerMove& move)
 {
 	auto result = _gameBoard.Unmark(move.playerID, move.position);
 	assert(result == UnmarkResult::Success);
@@ -77,7 +77,7 @@ void GameSimulation::OnUndo(const PlayerMove& move)
 }
 
 
-void GameSimulation::OnRedo(const PlayerMove& move)
+void GameSimulation::ApplyRedo(const PlayerMove& move)
 {
 	auto result = _gameBoard.Mark(move.playerID, move.position);
 	assert(result == MarkResult::Success);

@@ -271,18 +271,20 @@ void FancyGame::OnKeyEvent(const KEY_EVENT_RECORD& event)
 			case VK_Y:
 				if (isCtrlPressed)
 				{
-					// TODO: Redo should return success, only mark game area as dirty if successful
-					Redo();
-					_isGameAreaDirty = true;
+					if (Redo())
+					{
+						_isGameAreaDirty = true;
+					}
 				}
 				break;
 
 			case VK_Z:
 				if (isCtrlPressed)
 				{
-					// TODO: Undo should return success, only mark game area as dirty if successful
-					Undo();
-					_isGameAreaDirty = true;
+					if (Undo())
+					{
+						_isGameAreaDirty = true;
+					}
 				}
 				break;
 
