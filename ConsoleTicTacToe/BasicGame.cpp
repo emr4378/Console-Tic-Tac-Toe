@@ -165,20 +165,22 @@ bool BasicGame::ExecuteMarkCommand(std::string params)
 
 bool BasicGame::ExecuteUndoCommand()
 {
-	if (!Undo())
+	bool result = Undo();
+	if (!result)
 	{
 		std::cerr << "Error: Unable to perform undo." << std::endl;
 	}
-	return true;
+	return result;
 }
 
 bool BasicGame::ExecuteRedoCommand()
 {
-	if (!Redo())
+	bool result = Redo();
+	if (!result)
 	{
 		std::cerr << "Error: Unable to perform redo." << std::endl;
 	}
-	return true;
+	return result;
 }
 
 bool BasicGame::ExecuteHelpCommand()
