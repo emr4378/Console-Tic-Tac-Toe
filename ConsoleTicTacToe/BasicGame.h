@@ -4,6 +4,9 @@
 
 namespace tictactoe
 {
+	// A basic text-command based implementation of the GameSimulation.
+	// Prints strings describing the current game state to the console
+	// and allows the player to manipulate that state via predefined string commands.
 	class BasicGame : public GameSimulation
 	{
 	public:

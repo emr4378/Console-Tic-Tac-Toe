@@ -14,6 +14,9 @@ namespace tictactoe
 		Count
 	};
 
+	// An abstract base class for a 2-player m,n,k-game simulation.
+	// Maintains the game board, active player, and undo history state,
+	// and provides an interface for manipulating that state (see Mark(), Undo(), and Redo()).
 	class GameSimulation
 	{
 	public:

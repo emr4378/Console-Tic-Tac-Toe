@@ -5,6 +5,9 @@
 
 namespace tictactoe
 {
+	// A fancier text-user-interface (TUI) based implementation of the GameSimulation.
+	// Abuses the console (via ConsoleInterface) to visually render current game state
+	// and allows the user to manipulating that state via mouse cursor and keyboard input.
 	class FancyGame : public GameSimulation
 	{
 	public:

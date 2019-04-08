@@ -52,7 +52,9 @@ namespace tictactoe
 
 		ConsoleSize GetSize() const;
 	};
-
+	
+	// An interface for rendering (faking) simple graphics in a Windows console.
+	// Overwrites many user-defined console preferences to achieve this. Those preferences are restored on destruct.
 	// Reference: https://docs.microsoft.com/en-us/windows/console/
 	class ConsoleInterface
 	{
