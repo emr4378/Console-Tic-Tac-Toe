@@ -51,15 +51,20 @@ FancyGame::FancyGame(uint16_t m, uint16_t n, uint16_t k) :
 	minBufferSize.height = (CELL_SIZE * n) + INFO_AREA_SIZE;
 	_consoleInterface.SetMinBufferSize(minBufferSize);
 
-	// Attempt to fit the console window to the game area.
-	ConsoleSize windowSize;
-	windowSize.width = min(minBufferSize.width, _consoleInterface.GetMaximumBufferViewportSize().width - 1);
-	windowSize.height = min(minBufferSize.height, _consoleInterface.GetMaximumBufferViewportSize().height - 1);
+	// Attempt to fit the console window to the game area (minBufferSize) while keeping the size reasonable
+	// (no bigger than initial size).
+	{
+		const ConsoleSize currentViewportSize = _consoleInterface.GetCurrentBufferViewportRect().GetSize();
 
-	ConsoleSize bufferSize;
-	bufferSize.width = max(windowSize.width + 1, minBufferSize.width);
-	bufferSize.height = max(windowSize.height + 1, minBufferSize.height);
-	_consoleInterface.SetSizes(bufferSize, windowSize);
+		ConsoleSize viewportSize;
+		viewportSize.width = min(minBufferSize.width, currentViewportSize.width);
+		viewportSize.height = min(minBufferSize.height, currentViewportSize.height);
+
+		ConsoleSize bufferSize;
+		bufferSize.width = max(viewportSize.width + 1, minBufferSize.width);
+		bufferSize.height = max(viewportSize.height + 1, minBufferSize.height);
+		_consoleInterface.SetSizes(bufferSize, viewportSize);
+	}
 }
 
 FancyGame::~FancyGame()

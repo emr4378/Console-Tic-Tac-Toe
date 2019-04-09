@@ -241,8 +241,8 @@ bool ConsoleInterface::SetSizes(const ConsoleSize& bufferSize, const ConsoleSize
 		if (GetConsoleScreenBufferInfo(_stdOutHandle, &sbInfo))
 		{
 			const ConsoleSize maxViewportSize = GetMaximumBufferViewportSize();
-			if (maxViewportSize.width <= viewportSize.width ||
-				maxViewportSize.height <= viewportSize.height)
+			if (maxViewportSize.width < viewportSize.width ||
+				maxViewportSize.height < viewportSize.height)
 			{
 				assert(!"viewportSize must be smaller than system maximum window size.");
 			}
