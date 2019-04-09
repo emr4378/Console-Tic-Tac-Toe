@@ -12,6 +12,8 @@ using namespace tictactoe;
 #define VK_Y	0x59
 #define VK_Z	0x5A
 
+static const BoardPosition kInvalidBoardPosition = { UINT16_MAX, UINT16_MAX };
+
 static BoardPosition sGetBoardPosition(uint16_t x, uint16_t y);
 static ConsoleRect sGetBorderRect(uint16_t r, uint16_t c);
 static ConsoleRect sGetMarkerRect(uint16_t r, uint16_t c);
@@ -33,8 +35,10 @@ FancyGame::FancyGame(uint16_t m, uint16_t n, uint16_t k) :
 	_consoleInterface(),
 	_isGameAreaDirty(true),
 	_isInfoPanelDirty(true),
-	_currentMouseCell(),
-	_prevMouseCell(),
+	_isMouseCellMarkerDirty(true),
+	_isQuitRequested(false),
+	_currentMouseCell(kInvalidBoardPosition),
+	_prevMouseCell(kInvalidBoardPosition),
 	_prevViewportRect()
 {
 	_consoleInterface.SetCallbacks(
@@ -73,30 +77,15 @@ bool FancyGame::Update()
 		viewportRect.bottom != _prevViewportRect.bottom)
 	{
 		_isGameAreaDirty = true;
+		_isMouseCellMarkerDirty = true;
 	}
 
-	// If the mouse has changed the cell it's over the info panel will need to be redrawn.
+	// If the mouse has changed the cell it's over the info panel and cell marker will need to be redrawn.
 	if (_prevMouseCell.x != _currentMouseCell.x ||
 		_prevMouseCell.y != _currentMouseCell.y)
 	{
 		_isInfoPanelDirty = true;
-
-		if (GetGameStatus() == GameStatus::Active)
-		{
-			// Draw a temporary marker in the current mouse cell.
-			if (gameBoard.IsValidPosition(_currentMouseCell) &&
-				gameBoard.GetMarker(_currentMouseCell) == kInvalidPlayerID)
-			{
-				DrawPlayerMarker(sGetMarkerRect(_currentMouseCell.y, _currentMouseCell.x), GetActivePlayer(), ConsoleColor::DarkGray);
-			}
-
-			// Cleanup any temporary marker in the previous mouse cell.
-			if (gameBoard.IsValidPosition(_prevMouseCell) &&
-				gameBoard.GetMarker(_prevMouseCell) == kInvalidPlayerID)
-			{
-				DrawPlayerMarker(sGetMarkerRect(_prevMouseCell.y, _prevMouseCell.x), GetActivePlayer(), ConsoleColor::Black);
-			}
-		}
+		_isMouseCellMarkerDirty = true;
 	}
 
 	// Draw the game area.
@@ -248,6 +237,29 @@ bool FancyGame::Update()
 		_isInfoPanelDirty = false;
 	}
 
+	// Draw the mouse cell marker.
+	if (_isMouseCellMarkerDirty)
+	{
+		if (GetGameStatus() == GameStatus::Active)
+		{
+			// Cleanup any temporary marker in the previous mouse cell.
+			if (gameBoard.IsValidPosition(_prevMouseCell) &&
+				gameBoard.GetMarker(_prevMouseCell) == kInvalidPlayerID)
+			{
+				DrawPlayerMarker(sGetMarkerRect(_prevMouseCell.y, _prevMouseCell.x), GetActivePlayer(), ConsoleColor::Black);
+			}
+
+			// Draw a temporary marker in the current mouse cell.
+			if (gameBoard.IsValidPosition(_currentMouseCell) &&
+				gameBoard.GetMarker(_currentMouseCell) == kInvalidPlayerID)
+			{
+				DrawPlayerMarker(sGetMarkerRect(_currentMouseCell.y, _currentMouseCell.x), GetActivePlayer(), ConsoleColor::DarkGray);
+			}
+		}
+
+		_isMouseCellMarkerDirty = false;
+	}
+
 	_prevMouseCell = _currentMouseCell;
 	_prevViewportRect = viewportRect;
 
@@ -261,8 +273,8 @@ void FancyGame::Reset()
 	_consoleInterface.Clear();
 	_isGameAreaDirty = true;
 	_isInfoPanelDirty = true;
-	_prevMouseCell = {};
-	_currentMouseCell = {};
+	_isMouseCellMarkerDirty = true;
+	_isQuitRequested = false;
 }
 
 void FancyGame::OnKeyEvent(const KEY_EVENT_RECORD& event)
@@ -288,6 +300,7 @@ void FancyGame::OnKeyEvent(const KEY_EVENT_RECORD& event)
 				{
 					if (Redo())
 					{
+						_isMouseCellMarkerDirty = true;
 						_isGameAreaDirty = true;
 					}
 				}
@@ -298,6 +311,7 @@ void FancyGame::OnKeyEvent(const KEY_EVENT_RECORD& event)
 				{
 					if (Undo())
 					{
+						_isMouseCellMarkerDirty = true;
 						_isGameAreaDirty = true;
 					}
 				}

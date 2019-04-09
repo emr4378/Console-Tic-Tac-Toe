@@ -36,6 +36,7 @@ namespace tictactoe
 
 		bool _isGameAreaDirty;
 		bool _isInfoPanelDirty;
+		bool _isMouseCellMarkerDirty;
 		bool _isQuitRequested;
 
 		BoardPosition _currentMouseCell;
