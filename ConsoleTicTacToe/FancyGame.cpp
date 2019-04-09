@@ -7,7 +7,7 @@ using namespace tictactoe;
 #define BORDER_SIZE	1
 #define CELL_SIZE	(MARK_SIZE + (2 * PAD_SIZE) + BORDER_SIZE)
 
-#define INFO_AREA_SIZE	3
+#define INFO_AREA_SIZE	2
 
 #define VK_Y	0x59
 #define VK_Z	0x5A
@@ -46,9 +46,20 @@ FancyGame::FancyGame(uint16_t m, uint16_t n, uint16_t k) :
 		[=](const MOUSE_EVENT_RECORD& event) { this->OnMouseEvent(event); },
 		[=](const ConsoleSize& newSize) { this->OnResizeEvent(newSize); });
 
-	uint16_t minBufferWidth = (CELL_SIZE * m);
-	uint16_t minBufferHeight = (CELL_SIZE * n) + INFO_AREA_SIZE;
-	_consoleInterface.SetMinBufferSize({ minBufferWidth, minBufferHeight });
+	ConsoleSize minBufferSize;
+	minBufferSize.width = (CELL_SIZE * m);
+	minBufferSize.height = (CELL_SIZE * n) + INFO_AREA_SIZE;
+	_consoleInterface.SetMinBufferSize(minBufferSize);
+
+	// Attempt to fit the console window to the game area.
+	ConsoleSize windowSize;
+	windowSize.width = min(minBufferSize.width, _consoleInterface.GetMaximumBufferViewportSize().width - 1);
+	windowSize.height = min(minBufferSize.height, _consoleInterface.GetMaximumBufferViewportSize().height - 1);
+
+	ConsoleSize bufferSize;
+	bufferSize.width = max(windowSize.width + 1, minBufferSize.width);
+	bufferSize.height = max(windowSize.height + 1, minBufferSize.height);
+	_consoleInterface.SetSizes(bufferSize, windowSize);
 }
 
 FancyGame::~FancyGame()
@@ -135,19 +146,21 @@ bool FancyGame::Update()
 	// Draw the info panel.
 	if (_isInfoPanelDirty)
 	{
-		static_assert(INFO_AREA_SIZE == 3, "Info panel size is assumed to be 3");
+		static_assert(INFO_AREA_SIZE == 2, "Info panel size is assumed to be 2");
 
 		const ConsoleSize viewportSize = viewportRect.GetSize();
-		uint16_t minWidth = min(minBufferSize.width, viewportSize.width + 1);
+		uint16_t minWidth = min(minBufferSize.width, viewportSize.width);
+		uint16_t currentY;
 
 		char buffer[32];
 		int16_t bufferCharCount;
 
 		// Print the top line.
+		currentY = viewportRect.top + 0;
 		{
 			_consoleInterface.DrawLine(
-				viewportRect.left, viewportRect.top,
-				viewportRect.left + minWidth, viewportRect.top,
+				viewportRect.left, currentY,
+				viewportRect.left + minWidth, currentY,
 				ConsoleColor::White);
 
 			// Print the general game information.
@@ -159,7 +172,7 @@ bool FancyGame::Update()
 				_consoleInterface.DrawString(
 					buffer,
 					viewportRect.left,
-					viewportRect.top,
+					currentY,
 					ConsoleColor::Black,
 					ConsoleColor::White);
 			}
@@ -183,13 +196,14 @@ bool FancyGame::Update()
 				_consoleInterface.DrawString(
 					buffer,
 					viewportRect.left + minWidth - bufferCharCount + 1,
-					viewportRect.top,
+					currentY,
 					ConsoleColor::Black,
 					ConsoleColor::White);
 			}
 		}
 
 		// Print the current turn information (second line).
+		currentY = viewportRect.top + 1;
 		{
 			ConsoleColor foreground;
 			ConsoleColor background;
@@ -222,14 +236,14 @@ bool FancyGame::Update()
 			}
 
 			_consoleInterface.DrawLine(
-				viewportRect.left, viewportRect.top + 1,
-				viewportRect.left + minWidth, viewportRect.top + 1,
+				viewportRect.left, currentY,
+				viewportRect.left + minWidth, currentY,
 				background);
 
 			_consoleInterface.DrawString(
 				buffer,
 				viewportRect.left + (minWidth / 2) - (bufferCharCount / 2),
-				viewportRect.top + 1,
+				currentY,
 				foreground,
 				background);
 		}
@@ -352,6 +366,7 @@ void FancyGame::OnResizeEvent(const ConsoleSize& newSize)
 {
 	_isGameAreaDirty = true;
 	_isInfoPanelDirty = true;
+	_isMouseCellMarkerDirty = true;
 }
 
 void FancyGame::DrawCellBorderRightSide(const ConsoleRect& borderRect)

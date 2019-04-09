@@ -52,7 +52,7 @@ namespace tictactoe
 
 		ConsoleSize GetSize() const;
 	};
-	
+
 	// An interface for rendering (faking) simple graphics in a Windows console.
 	// Overwrites many user-defined console preferences to achieve this. Those preferences are restored on destruct.
 	// Reference: https://docs.microsoft.com/en-us/windows/console/
@@ -71,9 +71,12 @@ namespace tictactoe
 		void Update();
 
 		void SetMinBufferSize(const ConsoleSize& size);
+		bool SetSizes(const ConsoleSize& bufferSize, const ConsoleSize& viewportSize);
+
 		const ConsoleSize& GetMinBufferSize() const { return _minBufferSize; }
 		const ConsoleSize& GetCurrentBufferSize() const { return _currentBufferSize; }
 		const ConsoleRect& GetCurrentBufferViewportRect() const { return _currentBufferViewportRect; }
+		ConsoleSize GetMaximumBufferViewportSize() const;
 
 		void DrawChar(char c, uint16_t x, uint16_t y, const ConsoleColor& color, const ConsoleColor& backgroundColor);
 		void DrawString(const char* str, uint16_t x, uint16_t y, const ConsoleColor& color, const ConsoleColor& backgroundColor);

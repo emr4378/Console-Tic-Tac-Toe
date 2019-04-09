@@ -7,6 +7,7 @@
 using namespace tictactoe;
 
 static const ConsoleSize kAbsoluteMinimumBufferSize = { 1, 1 };
+static const SMALL_RECT kAbsoluteMinimumWindowSmallRect = { 0, 0, 1, 1 };
 
 static WORD sConsoleColorsToAttributes(const ConsoleColor& foregroundColor, const ConsoleColor& backgroundColor);
 
@@ -18,8 +19,8 @@ static ConsoleRect sSmallRectToConsoleRect(const SMALL_RECT& rect);
 
 ConsoleSize ConsoleRect::GetSize() const
 {
-	auto width = max(right - left, 0);
-	auto height = max(bottom - top, 0);
+	auto width = max(right - left, 0) + 1;
+	auto height = max(bottom - top, 0) + 1;
 	return { static_cast<uint16_t>(width), static_cast<uint16_t>(height) };
 }
 
@@ -123,8 +124,7 @@ void ConsoleInterface::RestoreInitialConsoleState()
 
 		// HACK: To avoid issues with screen buffer <-> window size dependencies, set the window size to the smallest
 		// possible value before setting it back to the original size (see https://stackoverflow.com/a/40634467).
-		SMALL_RECT minWindowRect = { 0, 0, 1, 1 };
-		result = SetConsoleWindowInfo(_stdOutHandle, true, &minWindowRect);
+		result = SetConsoleWindowInfo(_stdOutHandle, true, &kAbsoluteMinimumWindowSmallRect);
 		assert(result);
 
 		result = SetConsoleScreenBufferSize(_stdOutHandle, _cachedInfo.stdOutScreenBufferInfo.dwSize);
@@ -195,8 +195,8 @@ void ConsoleInterface::Update()
 
 		if (receivedResizeEvent)
 		{
-			uint16_t w = max(sbInfo.srWindow.Right - sbInfo.srWindow.Left, 0) + 1;
-			uint16_t h = max(sbInfo.srWindow.Bottom - sbInfo.srWindow.Top, 0) + 1;
+			uint16_t w = _currentBufferViewportRect.GetSize().width;
+			uint16_t h = _currentBufferViewportRect.GetSize().height;
 			if (w != _currentBufferSize.width ||
 				h != _currentBufferSize.height)
 			{
@@ -219,6 +219,74 @@ void ConsoleInterface::SetMinBufferSize(const ConsoleSize& size)
 	{
 		ResizeBuffer(w, h);
 	}
+}
+
+bool ConsoleInterface::SetSizes(const ConsoleSize& bufferSize, const ConsoleSize& viewportSize)
+{
+	bool result = false;
+
+	if (bufferSize.width < _minBufferSize.width ||
+		bufferSize.height < _minBufferSize.height)
+	{
+		assert(!"bufferSize must be larger than _minBufferSize");
+	}
+	else if (bufferSize.width <= viewportSize.width ||
+		bufferSize.height <= viewportSize.height)
+	{
+		assert(!"bufferSize must be larger than windowSize");
+	}
+	else
+	{
+		CONSOLE_SCREEN_BUFFER_INFO sbInfo;
+		if (GetConsoleScreenBufferInfo(_stdOutHandle, &sbInfo))
+		{
+			const ConsoleSize maxViewportSize = GetMaximumBufferViewportSize();
+			if (maxViewportSize.width <= viewportSize.width ||
+				maxViewportSize.height <= viewportSize.height)
+			{
+				assert(!"viewportSize must be smaller than system maximum window size.");
+			}
+			else
+			{
+				// HACK: To avoid issues with screen buffer <-> window size dependencies, set the window size to the smallest
+				// possible value before setting it back to the original size (see https://stackoverflow.com/a/40634467).
+				SMALL_RECT windowRect = kAbsoluteMinimumWindowSmallRect;
+				if (SetConsoleWindowInfo(_stdOutHandle, true, &windowRect))
+				{
+					if (SetConsoleScreenBufferSize(_stdOutHandle, sConsoleSizeToCoord(bufferSize)))
+					{
+						windowRect.Left = 0;
+						windowRect.Top = 0;
+						windowRect.Right = viewportSize.width;
+						windowRect.Bottom = viewportSize.height;
+						if (SetConsoleWindowInfo(_stdOutHandle, true, &windowRect))
+						{
+							result = true;
+						}
+
+						// If we haven't succeeded at this point revert the screen buffer size change.
+						if (!result)
+						{
+							SetConsoleScreenBufferSize(_stdOutHandle, sbInfo.dwSize);
+						}
+					}
+
+					// If we haven't succeeded at this point revert the window size change.
+					if (!result)
+					{
+						SetConsoleWindowInfo(_stdOutHandle, true, &sbInfo.srWindow);
+					}
+				}
+			}
+		}
+	}
+
+	return result;
+}
+
+ConsoleSize ConsoleInterface::GetMaximumBufferViewportSize() const
+{
+	return sCoordToConsoleSize(GetLargestConsoleWindowSize(_stdOutHandle));
 }
 
 void ConsoleInterface::ResizeBuffer(uint16_t w, uint16_t h)
