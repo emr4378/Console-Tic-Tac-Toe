@@ -138,22 +138,22 @@ bool BasicGame::ExecuteMarkCommand(std::string params)
 				break;
 
 			case MarkResult::PositionOutOfBounds:
-				std::cerr << position << " is out of bounds." << std::endl;
+				std::cerr << "Error: " << position << " is out of bounds." << std::endl;
 				break;
 
 			case MarkResult::PositionAlreadyMarked:
-				std::cerr << position << " is already marked." << std::endl;
+				std::cerr << "Error: " << position << " is already marked." << std::endl;
 				break;
 
 			case MarkResult::GameAlreadyOver:
-				std::cerr << "Cannot mark position; game has ended." << std::endl;
+				std::cerr << "Error: " << "Cannot mark position; game has ended." << std::endl;
 				break;
 		}
 		static_assert(static_cast<int16_t>(MarkResult::Count) == 4, "BasicGame::ExecuteMarkCommand() needs updating.");
 	}
 	else
 	{
-		std::cerr << "Invalid input for 'mark <x> <y>' command." << std::endl;
+		std::cerr << "Error: Invalid input for 'mark <x> <y>' command." << std::endl;
 	}
 
 	return result;
@@ -191,8 +191,14 @@ bool BasicGame::ExecuteHelpCommand()
 	{
 		printCmd("mark <x> <y>", "Places a marker at the given coordinates and ends the current turn.");
 	}
-	printCmd("undo",			"Moves back a turn, reverting a marker placement.");
-	printCmd("redo",			"Moves forward a turn, re-placing a reverted marker placement.");
+	if (GetMoveHistory().GetAvailableUndosCount() > 0)
+	{
+		printCmd("undo", "Moves back a turn, reverting a marker placement.");
+	}
+	if (GetMoveHistory().GetAvailableRedosCount() > 0)
+	{
+		printCmd("redo", "Moves forward a turn, re-placing a reverted marker placement.");
+	}
 	printCmd("help",			"Prints this help message.");
 	printCmd("status",			"Prints the current state of the game.");
 	printCmd("reset",			"Clears the current game board and restarts the game.");
