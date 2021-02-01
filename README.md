@@ -1,3 +1,5 @@
+![Fancy Mode](./Screenshot_FancyMode.png)
+
 # Console-Tic-Tac-Toe
 ConsoleTicTacToe - Created by Eduardo Rodrigues (edrodrigues.com)
 
